@@ -1,0 +1,13 @@
+[workspace]
+members = [
+  "lexer",
+]
+
+[package]
+name = "rusty-monkey"
+version = "0.1.0"
+authors = ["Gerard Abelló Serras <gerardabello@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+lexer = { version = "0.1", path = "lexer" }
