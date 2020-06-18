@@ -12,8 +12,7 @@ fn test_single_char_tokens() {
         ,
         ;
         =
-        {}
-        ()
+        {}()
         '\"
         >
         <
