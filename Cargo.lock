@@ -5,8 +5,16 @@ name = "lexer"
 version = "0.1.0"
 
 [[package]]
+name = "repl"
+version = "0.1.0"
+dependencies = [
+ "lexer",
+]
+
+[[package]]
 name = "rusty-monkey"
 version = "0.1.0"
 dependencies = [
  "lexer",
+ "repl",
 ]
