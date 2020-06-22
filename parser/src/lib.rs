@@ -2,6 +2,24 @@ use lexer::Token;
 
 pub mod ast;
 
+#[derive(PartialOrd, PartialEq)]
+enum Precedence {
+    Lowest,
+    Equals,
+    LessGreater,
+    Sum,
+    Product,
+    Prefix,
+    Call,
+}
+
+fn infix_operator_precedence(operation: &ast::InfixOperation) -> Precedence {
+    match operation {
+        ast::InfixOperation::Sum => Precedence::Sum,
+        ast::InfixOperation::Product => Precedence::Product,
+    }
+}
+
 #[derive(PartialEq, Debug)]
 pub enum ParseError {
     UnexpectedEnd,
@@ -43,19 +61,23 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             if t == compare_to {
                 return Ok(());
             }
-            return Err(ParseError::UnexpectedToken { token: t, expecting: format!("{:?}", compare_to) });
+            return Err(ParseError::UnexpectedToken {
+                token: t,
+                expecting: format!("{:?}", compare_to),
+            });
         }
         Err(ParseError::UnexpectedEnd)
     }
 
-    fn parse_identifier(&mut self) -> Result<ast::Identifier, ParseError> {
+    fn parse_identifier(&mut self) -> Result<String, ParseError> {
         let identifier_token_option = self.next_token();
         if let Some(identifier_token) = identifier_token_option {
             if let Token::Identifier { name, .. } = identifier_token {
-                Ok(ast::Identifier { name })
+                Ok(name)
             } else {
                 Err(ParseError::UnexpectedToken {
-                    token: identifier_token, expecting: String::from("Identifier")
+                    token: identifier_token,
+                    expecting: String::from("Identifier"),
                 })
             }
         } else {
@@ -66,7 +88,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
     fn parse_let_statement(&mut self) -> Result<ast::Statement, ParseError> {
         let identifier = self.parse_identifier()?;
         self.skip_token_expecting(Token::Assign)?;
-        let expression = self.parse_expression()?;
+        let expression = self.parse_expression(Precedence::Lowest)?;
         Ok(ast::Statement::LetStatement {
             identifier,
             expression,
@@ -74,10 +96,8 @@ impl<T: Iterator<Item = Token>> Parser<T> {
     }
 
     fn parse_return_statement(&mut self) -> Result<ast::Statement, ParseError> {
-        let expression = self.parse_expression()?;
-        Ok(ast::Statement::ReturnStatement {
-            expression,
-        })
+        let expression = self.parse_expression(Precedence::Lowest)?;
+        Ok(ast::Statement::ReturnStatement { expression })
     }
 
     fn parse_integer_literal_expression(
@@ -92,15 +112,98 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         }
     }
 
-    fn parse_expression(&mut self) -> Result<ast::Expression, ParseError> {
+    fn parse_prefix_expression(
+        &mut self,
+        operation: ast::PrefixOperation,
+    ) -> Result<ast::Expression, ParseError> {
+        match self.parse_expression(Precedence::Lowest) {
+            Ok(exp) => Ok(ast::Expression::PrefixExpression {
+                operation,
+                right: Box::new(exp),
+            }),
+            Err(e) => Err(e),
+        }
+    }
+
+    fn parse_prefix(&mut self) -> Result<ast::Expression, ParseError> {
         if let Some(token) = self.next_token() {
             return match token {
                 Token::Integer { string } => self.parse_integer_literal_expression(&string),
-                t => Err(ParseError::UnexpectedToken { token: t, expecting: String::from("Expression")}),
+                Token::Identifier { name } => {
+                    Ok(ast::Expression::IdentifierExpression { identifier: name })
+                }
+                Token::Bang => self.parse_prefix_expression(ast::PrefixOperation::Negate),
+                Token::Minus => self.parse_prefix_expression(ast::PrefixOperation::Negative),
+                t => Err(ParseError::UnexpectedToken {
+                    token: t,
+                    expecting: String::from("Prefix operator/Integer/Identifier"),
+                }),
             };
         }
 
         Err(ParseError::UnexpectedEnd)
+    }
+
+    fn parse_infix_expression(
+        &mut self,
+        operation: ast::InfixOperation,
+        left: ast::Expression,
+    ) -> Result<ast::Expression, ParseError> {
+        let precedence = infix_operator_precedence(&operation);
+        match self.parse_expression(precedence) {
+            Ok(exp) => Ok(ast::Expression::InfixExpression {
+                operation,
+                left: Box::new(left),
+                right: Box::new(exp),
+            }),
+            Err(e) => Err(e),
+        }
+    }
+
+    fn parse_infix(
+        &mut self,
+        left: ast::Expression,
+        precedence: &Precedence,
+    ) -> Option<Result<ast::Expression, ParseError>> {
+        if let Some(token) = self.next_token() {
+            let operation = match token {
+                Token::Plus => ast::InfixOperation::Sum,
+                Token::Asterisk => ast::InfixOperation::Product,
+                t => {
+                    self.save_token(t);
+                    return None;
+                }
+            };
+
+            let new_precedence = infix_operator_precedence(&operation);
+
+            if new_precedence <= *precedence {
+                self.save_token(token);
+                return None;
+            }
+
+            return Some(self.parse_infix_expression(operation, left));
+        }
+
+        Some(Err(ParseError::UnexpectedEnd))
+    }
+
+    fn parse_expression(&mut self, precedence: Precedence) -> Result<ast::Expression, ParseError> {
+        let mut left = self.parse_prefix()?;
+
+        loop {
+            let infix_opt = self.parse_infix(left.clone(), &precedence);
+
+            if let Some(Ok(infix)) = infix_opt {
+                left = infix;
+            } else if let Some(Err(e)) = infix_opt {
+                return Err(e);
+            } else{
+                break;
+            }
+        }
+
+        Ok(left)
     }
 
     // With statements, we allow an EOF on the first token (returns None), as we can't know for sure if there
@@ -113,12 +216,18 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 t => {
                     // Try to parse expression as ExpressionStatement
                     self.save_token(t);
-                    match self.parse_expression() {
-                        Ok(expression) => Some(Ok(ast::Statement::ExpressionStatement{expression})),
-                        Err(e) => Some(Err(e))
+                    match self.parse_expression(Precedence::Lowest) {
+                        Ok(expression) => {
+                            Some(Ok(ast::Statement::ExpressionStatement { expression }))
+                        }
+                        Err(e) => Some(Err(e)),
                     }
                 }
             };
+
+            if let Some(Err(e)) = statement {
+                return Some(Err(e));
+            }
 
             if let Err(e) = self.skip_token_expecting(Token::Semicolon) {
                 return Some(Err(e));
@@ -136,7 +245,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             match self.try_parse_statement() {
                 None => break,
                 Some(Ok(statement)) => program.push(statement),
-                Some(Err(e)) => return Err(e)
+                Some(Err(e)) => return Err(e),
             };
         }
 

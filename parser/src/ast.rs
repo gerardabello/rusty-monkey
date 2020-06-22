@@ -1,12 +1,7 @@
-#[derive(PartialEq, Debug)]
-pub struct Identifier {
-    pub name: String,
-}
-
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Statement {
     LetStatement {
-        identifier: Identifier,
+        identifier: String,
         expression: Expression,
     },
     ReturnStatement {
@@ -17,15 +12,29 @@ pub enum Statement {
     },
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum InfixOperation {
-    Plus,
+    Sum,
+    Product,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Clone, Debug)]
+pub enum PrefixOperation {
+    Negative,
+    Negate,
+}
+
+#[derive(PartialEq, Clone, Debug)]
 pub enum Expression {
     IntegerLiteral {
         value: i64,
+    },
+    IdentifierExpression {
+        identifier: String,
+    },
+    PrefixExpression {
+        operation: PrefixOperation,
+        right: Box<Expression>,
     },
     InfixExpression {
         operation: InfixOperation,
@@ -34,7 +43,7 @@ pub enum Expression {
     },
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Node {
     Statement(Statement),
     Expression(Expression),
