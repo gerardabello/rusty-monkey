@@ -5,7 +5,7 @@ pub mod ast;
 #[derive(PartialOrd, PartialEq)]
 enum Precedence {
     Lowest,
-    Equals,
+    Equal,
     LessGreater,
     Sum,
     Product,
@@ -16,7 +16,15 @@ enum Precedence {
 fn infix_operator_precedence(operation: &ast::InfixOperation) -> Precedence {
     match operation {
         ast::InfixOperation::Sum => Precedence::Sum,
+        ast::InfixOperation::Subtraction => Precedence::Sum,
         ast::InfixOperation::Product => Precedence::Product,
+        ast::InfixOperation::Division => Precedence::Product,
+        ast::InfixOperation::Equal => Precedence::Equal,
+        ast::InfixOperation::NotEqual => Precedence::Equal,
+        ast::InfixOperation::LessThan => Precedence::LessGreater,
+        ast::InfixOperation::GreaterThan => Precedence::LessGreater,
+        ast::InfixOperation::LessThanEqual => Precedence::LessGreater,
+        ast::InfixOperation::GreaterThanEqual => Precedence::LessGreater,
     }
 }
 
@@ -116,7 +124,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         &mut self,
         operation: ast::PrefixOperation,
     ) -> Result<ast::Expression, ParseError> {
-        match self.parse_expression(Precedence::Lowest) {
+        match self.parse_expression(Precedence::Prefix) {
             Ok(exp) => Ok(ast::Expression::PrefixExpression {
                 operation,
                 right: Box::new(exp),
@@ -132,6 +140,12 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 Token::Identifier { name } => {
                     Ok(ast::Expression::IdentifierExpression { identifier: name })
                 }
+                Token::True => {
+                    Ok(ast::Expression::Boolean { value: true })
+                },
+                Token::False => {
+                    Ok(ast::Expression::Boolean { value: false })
+                },
                 Token::Bang => self.parse_prefix_expression(ast::PrefixOperation::Negate),
                 Token::Minus => self.parse_prefix_expression(ast::PrefixOperation::Negative),
                 t => Err(ParseError::UnexpectedToken {
@@ -169,6 +183,14 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             let operation = match token {
                 Token::Plus => ast::InfixOperation::Sum,
                 Token::Asterisk => ast::InfixOperation::Product,
+                Token::Slash => ast::InfixOperation::Division,
+                Token::Minus => ast::InfixOperation::Subtraction,
+                Token::Equal => ast::InfixOperation::Equal,
+                Token::NotEqual => ast::InfixOperation::NotEqual,
+                Token::LessThan => ast::InfixOperation::LessThan,
+                Token::GreaterThan => ast::InfixOperation::GreaterThan,
+                Token::LessThanEqual => ast::InfixOperation::LessThanEqual,
+                Token::GreaterThanEqual => ast::InfixOperation::GreaterThanEqual,
                 t => {
                     self.save_token(t);
                     return None;

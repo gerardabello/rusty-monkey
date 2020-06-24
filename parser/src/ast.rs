@@ -16,6 +16,14 @@ pub enum Statement {
 pub enum InfixOperation {
     Sum,
     Product,
+    Division,
+    Subtraction,
+    Equal,
+    NotEqual,
+    LessThan,
+    GreaterThan,
+    LessThanEqual,
+    GreaterThanEqual,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -40,6 +48,9 @@ pub enum Expression {
         operation: InfixOperation,
         left: Box<Expression>,
         right: Box<Expression>,
+    },
+    Boolean {
+        value: bool,
     },
 }
 
