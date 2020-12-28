@@ -69,6 +69,9 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             if t == compare_to {
                 return Ok(());
             }
+
+            self.save_token(t.clone());
+
             return Err(ParseError::UnexpectedToken {
                 token: t,
                 expecting: format!("{:?}", compare_to),
@@ -120,6 +123,58 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         }
     }
 
+    fn parse_if_expression(&mut self) -> Result<ast::Expression, ParseError> {
+        self.skip_token_expecting(Token::OpenParenthesis)?;
+        let condition = self.parse_expression(Precedence::Lowest)?;
+        self.skip_token_expecting(Token::CloseParenthesis)?;
+        self.skip_token_expecting(Token::OpenBrace)?;
+
+        let mut consequence: Vec<ast::Statement> = Vec::new();
+        loop {
+            match self.try_parse_statement() {
+                None => break,
+                Some(Ok((statement, false))) => consequence.push(statement),
+                Some(Ok((statement, true))) => {
+                    consequence.push(statement);
+                    break;
+                }
+                Some(Err(e)) => return Err(e),
+            };
+        }
+
+        self.skip_token_expecting(Token::CloseBrace)?;
+        match self.skip_token_expecting(Token::Else) {
+            Err(_) => Ok(ast::Expression::IfExpression {
+                condition: Box::new(condition),
+                consequence,
+                alternative: None,
+            }),
+            Ok(()) => {
+                self.skip_token_expecting(Token::OpenBrace)?;
+
+                let mut alternative: Vec<ast::Statement> = Vec::new();
+                loop {
+                    match self.try_parse_statement() {
+                        None => break,
+                        Some(Ok((statement, false))) => alternative.push(statement),
+                        Some(Ok((statement, true))) => {
+                            alternative.push(statement);
+                            break;
+                        }
+                        Some(Err(e)) => return Err(e),
+                    };
+                }
+
+                self.skip_token_expecting(Token::CloseBrace)?;
+                Ok(ast::Expression::IfExpression {
+                    condition: Box::new(condition),
+                    consequence,
+                    alternative: Some(alternative),
+                })
+            }
+        }
+    }
+
     fn parse_grouped_expression(&mut self) -> Result<ast::Expression, ParseError> {
         let expression = self.parse_expression(Precedence::Lowest)?;
 
@@ -152,6 +207,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 Token::Bang => self.parse_prefix_expression(ast::PrefixOperation::Negate),
                 Token::Minus => self.parse_prefix_expression(ast::PrefixOperation::Negative),
                 Token::OpenParenthesis => self.parse_grouped_expression(),
+                Token::If => self.parse_if_expression(),
                 t => Err(ParseError::UnexpectedToken {
                     token: t,
                     expecting: String::from("Prefix operator/Integer/Identifier"),
@@ -234,32 +290,32 @@ impl<T: Iterator<Item = Token>> Parser<T> {
 
     // With statements, we allow an EOF on the first token (returns None), as we can't know for sure if there
     // will be a next statement or not.
-    fn try_parse_statement(&mut self) -> Option<Result<ast::Statement, ParseError>> {
+    // The boolean represents if it should be the last statement of a list, if an statement does
+    // not have a semicolon.
+    fn try_parse_statement(&mut self) -> Option<Result<(ast::Statement, bool), ParseError>> {
         if let Some(token) = self.next_token() {
             let statement = match token {
-                Token::Let => Some(self.parse_let_statement()),
-                Token::Return => Some(self.parse_return_statement()),
+                Token::Let => self.parse_let_statement(),
+                Token::Return => self.parse_return_statement(),
                 t => {
                     // Try to parse expression as ExpressionStatement
                     self.save_token(t);
                     match self.parse_expression(Precedence::Lowest) {
-                        Ok(expression) => {
-                            Some(Ok(ast::Statement::ExpressionStatement { expression }))
-                        }
-                        Err(e) => Some(Err(e)),
+                        Ok(expression) => Ok(ast::Statement::ExpressionStatement { expression }),
+                        Err(e) => Err(e),
                     }
                 }
             };
 
-            if let Some(Err(e)) = statement {
+            if let Err(e) = statement {
                 return Some(Err(e));
             }
 
-            if let Err(e) = self.skip_token_expecting(Token::Semicolon) {
-                return Some(Err(e));
+            if self.skip_token_expecting(Token::Semicolon).is_err() {
+                return Some(Ok((statement.unwrap(), true)));
             }
 
-            return statement;
+            return Some(Ok((statement.unwrap(), false)));
         }
 
         None
@@ -270,7 +326,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         loop {
             match self.try_parse_statement() {
                 None => break,
-                Some(Ok(statement)) => program.push(statement),
+                Some(Ok((statement, _))) => program.push(statement),
                 Some(Err(e)) => return Err(e),
             };
         }

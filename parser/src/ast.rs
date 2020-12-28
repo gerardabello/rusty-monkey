@@ -49,6 +49,11 @@ pub enum Expression {
         left: Box<Expression>,
         right: Box<Expression>,
     },
+    IfExpression {
+        condition: Box<Expression>,
+        consequence: Vec<Statement>,
+        alternative: Option<Vec<Statement>>,
+    },
     Boolean {
         value: bool,
     },

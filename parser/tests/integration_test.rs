@@ -671,3 +671,145 @@ fn test_grouped_expression_nested() {
 
     assert_eq!(parse_tokens(tokens), expected_ast);
 }
+
+#[test]
+fn test_if_expression() {
+    let tokens = vec![
+        Token::If,
+        Token::OpenParenthesis,
+        Token::Identifier {
+            name: String::from("x"),
+        },
+        Token::LessThanEqual,
+        Token::Integer {
+            string: String::from("7"),
+        },
+        Token::CloseParenthesis,
+        Token::OpenBrace,
+        Token::Let,
+        Token::Identifier {
+            name: String::from("z"),
+        },
+        Token::Assign,
+        Token::Identifier {
+            name: String::from("x"),
+        },
+        Token::Asterisk,
+        Token::Integer {
+            string: String::from("2"),
+        },
+        Token::Semicolon,
+        Token::Identifier {
+            name: String::from("z"),
+        },
+        Token::CloseBrace,
+        Token::Semicolon,
+    ];
+
+    let expected_ast = vec![ast::Statement::ExpressionStatement {
+        expression: ast::Expression::IfExpression {
+            condition: Box::new(ast::Expression::InfixExpression {
+                operation: ast::InfixOperation::LessThanEqual,
+                left: Box::new(ast::Expression::IdentifierExpression {
+                    identifier: String::from("x"),
+                }),
+                right: Box::new(ast::Expression::IntegerLiteral { value: 7 }),
+            }),
+            consequence: vec![
+                ast::Statement::LetStatement {
+                    identifier: String::from("z"),
+                    expression: ast::Expression::InfixExpression {
+                        operation: ast::InfixOperation::Product,
+                        left: Box::new(ast::Expression::IdentifierExpression {
+                            identifier: String::from("x"),
+                        }),
+                        right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
+                    },
+                },
+                ast::Statement::ExpressionStatement {
+                    expression: ast::Expression::IdentifierExpression {
+                        identifier: String::from("z"),
+                    },
+                },
+            ],
+            alternative: None,
+        },
+    }];
+
+    assert_eq!(parse_tokens(tokens), expected_ast);
+}
+
+#[test]
+fn test_if_else_expression() {
+    let tokens = vec![
+        Token::If,
+        Token::OpenParenthesis,
+        Token::Identifier {
+            name: String::from("x"),
+        },
+        Token::LessThanEqual,
+        Token::Integer {
+            string: String::from("7"),
+        },
+        Token::CloseParenthesis,
+        Token::OpenBrace,
+        Token::Let,
+        Token::Identifier {
+            name: String::from("z"),
+        },
+        Token::Assign,
+        Token::Identifier {
+            name: String::from("x"),
+        },
+        Token::Asterisk,
+        Token::Integer {
+            string: String::from("2"),
+        },
+        Token::Semicolon,
+        Token::Identifier {
+            name: String::from("z"),
+        },
+        Token::CloseBrace,
+        Token::Else,
+        Token::OpenBrace,
+        Token::Integer {
+            string: String::from("14"),
+        },
+        Token::CloseBrace,
+        Token::Semicolon,
+    ];
+
+    let expected_ast = vec![ast::Statement::ExpressionStatement {
+        expression: ast::Expression::IfExpression {
+            condition: Box::new(ast::Expression::InfixExpression {
+                operation: ast::InfixOperation::LessThanEqual,
+                left: Box::new(ast::Expression::IdentifierExpression {
+                    identifier: String::from("x"),
+                }),
+                right: Box::new(ast::Expression::IntegerLiteral { value: 7 }),
+            }),
+            consequence: vec![
+                ast::Statement::LetStatement {
+                    identifier: String::from("z"),
+                    expression: ast::Expression::InfixExpression {
+                        operation: ast::InfixOperation::Product,
+                        left: Box::new(ast::Expression::IdentifierExpression {
+                            identifier: String::from("x"),
+                        }),
+                        right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
+                    },
+                },
+                ast::Statement::ExpressionStatement {
+                    expression: ast::Expression::IdentifierExpression {
+                        identifier: String::from("z"),
+                    },
+                },
+            ],
+            alternative: Some(vec![ast::Statement::ExpressionStatement {
+                expression: ast::Expression::IntegerLiteral { value: 14 },
+            }]),
+        },
+    }];
+
+    assert_eq!(parse_tokens(tokens), expected_ast);
+}

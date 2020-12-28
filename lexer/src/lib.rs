@@ -1,6 +1,6 @@
 use std::iter::Iterator;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Token {
     Identifier { name: String },
     Integer { string: String },
