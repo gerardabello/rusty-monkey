@@ -120,17 +120,24 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         }
     }
 
+    fn parse_grouped_expression(&mut self) -> Result<ast::Expression, ParseError> {
+        let expression = self.parse_expression(Precedence::Lowest)?;
+
+        self.skip_token_expecting(Token::CloseParenthesis)?;
+
+        Ok(expression)
+    }
+
     fn parse_prefix_expression(
         &mut self,
         operation: ast::PrefixOperation,
     ) -> Result<ast::Expression, ParseError> {
-        match self.parse_expression(Precedence::Prefix) {
-            Ok(exp) => Ok(ast::Expression::PrefixExpression {
-                operation,
-                right: Box::new(exp),
-            }),
-            Err(e) => Err(e),
-        }
+        let expression = self.parse_expression(Precedence::Prefix)?;
+
+        Ok(ast::Expression::PrefixExpression {
+            operation,
+            right: Box::new(expression),
+        })
     }
 
     fn parse_prefix(&mut self) -> Result<ast::Expression, ParseError> {
@@ -140,14 +147,11 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 Token::Identifier { name } => {
                     Ok(ast::Expression::IdentifierExpression { identifier: name })
                 }
-                Token::True => {
-                    Ok(ast::Expression::Boolean { value: true })
-                },
-                Token::False => {
-                    Ok(ast::Expression::Boolean { value: false })
-                },
+                Token::True => Ok(ast::Expression::Boolean { value: true }),
+                Token::False => Ok(ast::Expression::Boolean { value: false }),
                 Token::Bang => self.parse_prefix_expression(ast::PrefixOperation::Negate),
                 Token::Minus => self.parse_prefix_expression(ast::PrefixOperation::Negative),
+                Token::OpenParenthesis => self.parse_grouped_expression(),
                 t => Err(ParseError::UnexpectedToken {
                     token: t,
                     expecting: String::from("Prefix operator/Integer/Identifier"),
@@ -220,7 +224,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 left = infix;
             } else if let Some(Err(e)) = infix_opt {
                 return Err(e);
-            } else{
+            } else {
                 break;
             }
         }

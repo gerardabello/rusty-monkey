@@ -140,6 +140,7 @@ fn test_sum_expression() {
     }];
     assert_eq!(parse_tokens(tokens), expected_ast);
 }
+
 #[test]
 fn test_subtraction_expressions() {
     let tokens = vec![
@@ -367,7 +368,7 @@ fn test_expression_precedence_1() {
         },
         Token::Plus,
         Token::Integer {
-            string: String::from("5"),
+            string: String::from("2"),
         },
         Token::Asterisk,
         Token::Integer {
@@ -382,7 +383,7 @@ fn test_expression_precedence_1() {
             left: Box::new(ast::Expression::IntegerLiteral { value: 5 }),
             right: Box::new(ast::Expression::InfixExpression {
                 operation: ast::InfixOperation::Product,
-                left: Box::new(ast::Expression::IntegerLiteral { value: 5 }),
+                left: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
                 right: Box::new(ast::Expression::IntegerLiteral { value: 10 }),
             }),
         },
@@ -399,7 +400,7 @@ fn test_expression_precedence_1_b() {
         },
         Token::Asterisk,
         Token::Integer {
-            string: String::from("5"),
+            string: String::from("2"),
         },
         Token::Plus,
         Token::Integer {
@@ -414,7 +415,7 @@ fn test_expression_precedence_1_b() {
             left: Box::new(ast::Expression::InfixExpression {
                 operation: ast::InfixOperation::Product,
                 left: Box::new(ast::Expression::IntegerLiteral { value: 5 }),
-                right: Box::new(ast::Expression::IntegerLiteral { value: 5 }),
+                right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
             }),
             right: Box::new(ast::Expression::IntegerLiteral { value: 10 }),
         },
@@ -552,6 +553,118 @@ fn test_expression_precedence_4() {
             }),
             right: Box::new(ast::Expression::IdentifierExpression {
                 identifier: String::from("f"),
+            }),
+        },
+    }];
+
+    assert_eq!(parse_tokens(tokens), expected_ast);
+}
+
+#[test]
+fn test_grouped_expression_1() {
+    let tokens = vec![
+        Token::OpenParenthesis,
+        Token::Integer {
+            string: String::from("5"),
+        },
+        Token::Plus,
+        Token::Integer {
+            string: String::from("2"),
+        },
+        Token::CloseParenthesis,
+        Token::Asterisk,
+        Token::Integer {
+            string: String::from("10"),
+        },
+        Token::Semicolon,
+    ];
+
+    let expected_ast = vec![ast::Statement::ExpressionStatement {
+        expression: ast::Expression::InfixExpression {
+            operation: ast::InfixOperation::Product,
+            left: Box::new(ast::Expression::InfixExpression {
+                operation: ast::InfixOperation::Sum,
+                left: Box::new(ast::Expression::IntegerLiteral { value: 5 }),
+                right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
+            }),
+            right: Box::new(ast::Expression::IntegerLiteral { value: 10 }),
+        },
+    }];
+
+    assert_eq!(parse_tokens(tokens), expected_ast);
+}
+
+#[test]
+fn test_grouped_expression_2() {
+    let tokens = vec![
+        Token::Integer {
+            string: String::from("5"),
+        },
+        Token::Asterisk,
+        Token::OpenParenthesis,
+        Token::Integer {
+            string: String::from("2"),
+        },
+        Token::Plus,
+        Token::Integer {
+            string: String::from("10"),
+        },
+        Token::CloseParenthesis,
+        Token::Semicolon,
+    ];
+
+    let expected_ast = vec![ast::Statement::ExpressionStatement {
+        expression: ast::Expression::InfixExpression {
+            operation: ast::InfixOperation::Product,
+            left: Box::new(ast::Expression::IntegerLiteral { value: 5 }),
+            right: Box::new(ast::Expression::InfixExpression {
+                operation: ast::InfixOperation::Sum,
+                left: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
+                right: Box::new(ast::Expression::IntegerLiteral { value: 10 }),
+            }),
+        },
+    }];
+
+    assert_eq!(parse_tokens(tokens), expected_ast);
+}
+
+#[test]
+fn test_grouped_expression_nested() {
+    let tokens = vec![
+        Token::Integer {
+            string: String::from("1"),
+        },
+        Token::Asterisk,
+        Token::OpenParenthesis,
+        Token::OpenParenthesis,
+        Token::Integer {
+            string: String::from("4"),
+        },
+        Token::Plus,
+        Token::Integer {
+            string: String::from("5"),
+        },
+        Token::CloseParenthesis,
+        Token::Asterisk,
+        Token::Integer {
+            string: String::from("8"),
+        },
+        Token::CloseParenthesis,
+        Token::Semicolon,
+    ];
+
+    let expected_ast = vec![ast::Statement::ExpressionStatement {
+        expression: ast::Expression::InfixExpression {
+            operation: ast::InfixOperation::Product,
+            left: Box::new(ast::Expression::IntegerLiteral { value: 1 }),
+            right: Box::new(ast::Expression::InfixExpression {
+                operation: ast::InfixOperation::Product,
+                left: Box::new(ast::Expression::InfixExpression {
+                    operation: ast::InfixOperation::Sum,
+                    left: Box::new(ast::Expression::IntegerLiteral { value: 4 }),
+                    right: Box::new(ast::Expression::IntegerLiteral { value: 5 }),
+                }),
+                right: Box::new(ast::Expression::IntegerLiteral { value: 8 }),
             }),
         },
     }];
