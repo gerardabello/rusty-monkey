@@ -552,3 +552,52 @@ fn test_assign_if_expression() {
 
     assert_eq!(parse(program), expected_ast);
 }
+
+
+#[test]
+fn test_function_expression() {
+    let program = "
+        fn (a,b,c) {
+            let z = a + b;
+            z * c
+        };
+        ";
+
+    let expected_ast = vec![ast::Statement::ExpressionStatement {
+        expression: ast::Expression::FunctionExpression {
+            arguments: vec![
+                String::from("a"),
+                String::from("b"),
+                String::from("c"),
+            ],
+            body: vec![
+                ast::Statement::LetStatement {
+                    identifier: String::from("z"),
+                    expression: ast::Expression::InfixExpression {
+                        operation: ast::InfixOperation::Sum,
+                        left: Box::new(ast::Expression::IdentifierExpression {
+                            identifier: String::from("a"),
+                        }),
+                        right: Box::new(ast::Expression::IdentifierExpression {
+                            identifier: String::from("b"),
+                        }),
+                    },
+                },
+                ast::Statement::ReturnStatement {
+                    expression: ast::Expression::InfixExpression {
+                        operation: ast::InfixOperation::Product,
+                        left: Box::new(ast::Expression::IdentifierExpression {
+                            identifier: String::from("z"),
+                        }),
+                        right: Box::new(ast::Expression::IdentifierExpression {
+                            identifier: String::from("c"),
+                        }),
+                    },
+                },
+            ],
+        },
+    }];
+
+    assert_eq!(parse(program), expected_ast);
+}
+

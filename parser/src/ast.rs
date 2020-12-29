@@ -54,6 +54,10 @@ pub enum Expression {
         consequence: Vec<Statement>,
         alternative: Option<Vec<Statement>>,
     },
+    FunctionExpression {
+        arguments: Vec<String>,
+        body: Vec<Statement>,
+    },
     Boolean {
         value: bool,
     },

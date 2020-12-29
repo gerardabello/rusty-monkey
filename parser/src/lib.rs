@@ -42,7 +42,6 @@ pub struct Parser<T: Iterator<Item = char>> {
     token_buffer: Vec<Token>,
 }
 
-
 impl<T: Iterator<Item = char>> Parser<T> {
     pub fn new(iter: T) -> Self {
         Parser {
@@ -146,7 +145,8 @@ impl<T: Iterator<Item = char>> Parser<T> {
             let statement = self.parse_statement()?;
             match self.peek_next_token() {
                 Some(Token::Semicolon) => {
-                    self.skip_token().expect("We just peeked, so there must be a semicolon here");
+                    self.skip_token()
+                        .expect("We just peeked, so there must be a semicolon here");
                     block.push(statement);
                 }
                 Some(_) => {
@@ -166,6 +166,40 @@ impl<T: Iterator<Item = char>> Parser<T> {
         self.skip_token_expecting(Token::CloseBrace)?;
 
         Ok(block)
+    }
+
+    fn parse_function_expression(&mut self) -> Result<ast::Expression, ParseError> {
+        self.skip_token_expecting(Token::OpenParenthesis)?;
+
+        let mut arguments: Vec<String> = Vec::new();
+
+        loop {
+
+            match self.next_token() {
+                Some(Token::Identifier{name}) => {
+                    arguments.push(name);
+                }
+                Some(t) => return Err(ParseError::UnexpectedToken{token: t, expecting: String::from("identifier")}),
+                None => return Err(ParseError::UnexpectedEnd),
+            }
+
+            match self.peek_next_token() {
+                Some(Token::Comma) => {
+                    self.skip_token().expect("We just peeked");
+                    continue;
+                }
+                Some(Token::CloseParenthesis) => {
+                    self.skip_token().expect("We just peeked");
+                    break;
+                }
+                Some(t) => return Err(ParseError::UnexpectedToken{token: t.clone(), expecting: String::from("identifier")}),
+                None => return Err(ParseError::UnexpectedEnd),
+            };
+        }
+
+        let body: Vec<ast::Statement> = self.parse_statement_block()?;
+
+        Ok(ast::Expression::FunctionExpression { arguments, body })
     }
 
     fn parse_if_expression(&mut self) -> Result<ast::Expression, ParseError> {
@@ -228,6 +262,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
                 Token::Minus => self.parse_prefix_expression(ast::PrefixOperation::Negative),
                 Token::OpenParenthesis => self.parse_grouped_expression(),
                 Token::If => self.parse_if_expression(),
+                Token::Function => self.parse_function_expression(),
                 t => Err(ParseError::UnexpectedToken {
                     token: t,
                     expecting: String::from("Prefix operator/Integer/Identifier"),
