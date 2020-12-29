@@ -35,6 +35,7 @@ pub enum ParseError {
     UnexpectedToken { token: Token, expecting: String },
     FailedParsingInteger { string: String },
     MissingSemicolon,
+    NonIdentifierExpression,
 }
 
 pub struct Parser<T: Iterator<Item = char>> {
@@ -168,20 +169,14 @@ impl<T: Iterator<Item = char>> Parser<T> {
         Ok(block)
     }
 
-    fn parse_function_expression(&mut self) -> Result<ast::Expression, ParseError> {
+    fn parse_expression_list(&mut self) -> Result<Vec<ast::Expression>, ParseError> {
+        let mut list: Vec<ast::Expression> = Vec::new();
         self.skip_token_expecting(Token::OpenParenthesis)?;
 
-        let mut arguments: Vec<String> = Vec::new();
-
         loop {
+            let expression = self.parse_expression(Precedence::Lowest)?;
 
-            match self.next_token() {
-                Some(Token::Identifier{name}) => {
-                    arguments.push(name);
-                }
-                Some(t) => return Err(ParseError::UnexpectedToken{token: t, expecting: String::from("identifier")}),
-                None => return Err(ParseError::UnexpectedEnd),
-            }
+            list.push(expression);
 
             match self.peek_next_token() {
                 Some(Token::Comma) => {
@@ -192,10 +187,42 @@ impl<T: Iterator<Item = char>> Parser<T> {
                     self.skip_token().expect("We just peeked");
                     break;
                 }
-                Some(t) => return Err(ParseError::UnexpectedToken{token: t.clone(), expecting: String::from("identifier")}),
+                Some(t) => {
+                    return Err(ParseError::UnexpectedToken {
+                        token: t.clone(),
+                        expecting: String::from("comma, close parenthesis"),
+                    })
+                }
                 None => return Err(ParseError::UnexpectedEnd),
             };
         }
+
+        Ok(list)
+    }
+
+    fn parse_function_expression(&mut self) -> Result<ast::Expression, ParseError> {
+        let arguments_expressions = self.parse_expression_list()?;
+
+        if !arguments_expressions.iter().all(|ex| {
+            if let ast::Expression::IdentifierExpression { identifier } = ex {
+                return true;
+            }
+
+            false
+        }) {
+            return Err(ParseError::NonIdentifierExpression);
+        }
+
+        let arguments = arguments_expressions
+            .into_iter()
+            .map(|ex| {
+                if let ast::Expression::IdentifierExpression { identifier } = ex {
+                    return identifier;
+                }
+
+                unreachable!();
+            })
+            .collect::<Vec<_>>();
 
         let body: Vec<ast::Statement> = self.parse_statement_block()?;
 
@@ -273,6 +300,17 @@ impl<T: Iterator<Item = char>> Parser<T> {
         Err(ParseError::UnexpectedEnd)
     }
 
+    fn parse_call_expression(
+        &mut self,
+        function: ast::Expression,
+    ) -> Result<ast::Expression, ParseError> {
+        let arguments = self.parse_expression_list()?;
+        Ok(ast::Expression::CallExpression {
+            function: Box::new(function),
+            arguments,
+        })
+    }
+
     fn parse_infix_expression(
         &mut self,
         operation: ast::InfixOperation,
@@ -306,6 +344,10 @@ impl<T: Iterator<Item = char>> Parser<T> {
                 Token::GreaterThan => ast::InfixOperation::GreaterThan,
                 Token::LessThanEqual => ast::InfixOperation::LessThanEqual,
                 Token::GreaterThanEqual => ast::InfixOperation::GreaterThanEqual,
+                Token::OpenParenthesis => {
+                    self.save_token(token);
+                    return Some(self.parse_call_expression(left));
+                }
                 t => {
                     self.save_token(t);
                     return None;

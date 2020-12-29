@@ -6,6 +6,11 @@ fn parse(s: &str) -> ast::Program {
     parser.parse_program().unwrap()
 }
 
+fn parse_errors(s: &str) -> bool {
+    let mut parser = Parser::new(s.chars());
+    parser.parse_program().is_err()
+}
+
 #[test]
 fn test_let_statement() {
     let program = "let answer = 42;";
@@ -553,7 +558,6 @@ fn test_assign_if_expression() {
     assert_eq!(parse(program), expected_ast);
 }
 
-
 #[test]
 fn test_function_expression() {
     let program = "
@@ -565,11 +569,7 @@ fn test_function_expression() {
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::FunctionExpression {
-            arguments: vec![
-                String::from("a"),
-                String::from("b"),
-                String::from("c"),
-            ],
+            arguments: vec![String::from("a"), String::from("b"), String::from("c")],
             body: vec![
                 ast::Statement::LetStatement {
                     identifier: String::from("z"),
@@ -601,3 +601,109 @@ fn test_function_expression() {
     assert_eq!(parse(program), expected_ast);
 }
 
+#[test]
+fn test_function_expression_with_expression_arguments() {
+    let program = "
+        fn (a + b) {
+            a
+        };
+        ";
+
+    assert!(parse_errors(program));
+}
+
+#[test]
+fn test_call_expression() {
+    let program = "myfunction(4, c, foo * 2);";
+
+    let expected_ast = vec![ast::Statement::ExpressionStatement {
+        expression: ast::Expression::CallExpression {
+            function: Box::new(ast::Expression::IdentifierExpression {
+                identifier: String::from("myfunction"),
+            }),
+            arguments: vec![
+                ast::Expression::IntegerLiteral { value: 4 },
+                ast::Expression::IdentifierExpression {
+                    identifier: String::from("c"),
+                },
+                ast::Expression::InfixExpression {
+                    operation: ast::InfixOperation::Product,
+                    left: Box::new(ast::Expression::IdentifierExpression {
+                        identifier: String::from("foo"),
+                    }),
+                    right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
+                },
+            ],
+        },
+    }];
+
+    assert_eq!(parse(program), expected_ast);
+}
+
+#[test]
+fn test_inline_call_expression() {
+    let program = "fn(a){a * 2}(4);";
+
+    let expected_ast = vec![ast::Statement::ExpressionStatement {
+        expression: ast::Expression::CallExpression {
+            function: Box::new(ast::Expression::FunctionExpression {
+                arguments: vec![String::from("a")],
+                body: vec![ast::Statement::ReturnStatement {
+                    expression: ast::Expression::InfixExpression {
+                        operation: ast::InfixOperation::Product,
+                        left: Box::new(ast::Expression::IdentifierExpression {
+                            identifier: String::from("a"),
+                        }),
+                        right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
+                    },
+                }],
+            }),
+            arguments: vec![ast::Expression::IntegerLiteral { value: 4 }],
+        },
+    }];
+
+    assert_eq!(parse(program), expected_ast);
+}
+
+#[test]
+fn test_call_precedence() {
+    let program = "4 + add(add(1,2), a * 2) * c;";
+
+    let expected_ast = vec![ast::Statement::ExpressionStatement {
+        expression: ast::Expression::InfixExpression {
+            operation: ast::InfixOperation::Sum,
+            left: Box::new(ast::Expression::IntegerLiteral { value: 4 }),
+            right: Box::new(ast::Expression::InfixExpression {
+                operation: ast::InfixOperation::Product,
+                left: Box::new(ast::Expression::CallExpression {
+                    function: Box::new(ast::Expression::IdentifierExpression {
+                        identifier: String::from("add"),
+                    }),
+                    arguments: vec![
+                        ast::Expression::CallExpression {
+                            function: Box::new(ast::Expression::IdentifierExpression {
+                                identifier: String::from("add"),
+                            }),
+                            arguments: vec![
+                                ast::Expression::IntegerLiteral { value: 1 },
+                                ast::Expression::IntegerLiteral { value: 2 },
+                            ],
+                        },
+                        ast::Expression::InfixExpression {
+                            operation: ast::InfixOperation::Product,
+                            left: Box::new(ast::Expression::IdentifierExpression {
+                                identifier: String::from("a"),
+                            }),
+                            right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
+                        },
+                    ],
+                }),
+                right: Box::new(ast::Expression::IdentifierExpression {
+                    identifier: String::from("c"),
+                }),
+            }),
+        },
+    }];
+
+    assert_eq!(parse(program), expected_ast);
+}

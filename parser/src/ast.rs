@@ -58,6 +58,10 @@ pub enum Expression {
         arguments: Vec<String>,
         body: Vec<Statement>,
     },
+    CallExpression {
+        function: Box<Expression>, // Can only be identifier or function
+        arguments: Vec<Expression>,
+    },
     Boolean {
         value: bool,
     },
