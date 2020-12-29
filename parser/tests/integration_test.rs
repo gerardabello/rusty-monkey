@@ -726,7 +726,7 @@ fn test_if_expression() {
                         right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
                     },
                 },
-                ast::Statement::ExpressionStatement {
+                ast::Statement::ReturnStatement {
                     expression: ast::Expression::IdentifierExpression {
                         identifier: String::from("z"),
                     },
@@ -799,13 +799,13 @@ fn test_if_else_expression() {
                         right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
                     },
                 },
-                ast::Statement::ExpressionStatement {
+                ast::Statement::ReturnStatement {
                     expression: ast::Expression::IdentifierExpression {
                         identifier: String::from("z"),
                     },
                 },
             ],
-            alternative: Some(vec![ast::Statement::ExpressionStatement {
+            alternative: Some(vec![ast::Statement::ReturnStatement {
                 expression: ast::Expression::IntegerLiteral { value: 14 },
             }]),
         },
