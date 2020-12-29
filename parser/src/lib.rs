@@ -332,6 +332,9 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 break;
             }
             let statement = self.parse_statement()?;
+
+            // In the program (not inside a statement block) semicolons are always required after
+            // statements.
             self.skip_token_expecting(Token::Semicolon)?;
             program.push(statement);
         }
