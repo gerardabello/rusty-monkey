@@ -1,5 +1,8 @@
 use std::iter::Iterator;
 
+#[cfg(test)]
+mod tests;
+
 #[derive(PartialEq, Debug, Clone)]
 pub enum Token {
     Identifier { name: String },

@@ -1,67 +1,42 @@
-use lexer::Token;
 use parser::ast;
 use parser::Parser;
 
-fn parse_tokens(tokens: Vec<Token>) -> ast::Program {
-    let mut parser = Parser::new(tokens.into_iter());
+fn parse(s: &str) -> ast::Program {
+    let mut parser = Parser::new(s.chars());
     parser.parse_program().unwrap()
 }
 
 #[test]
 fn test_let_statement() {
-    let tokens = vec![
-        Token::Let,
-        Token::Identifier {
-            name: String::from("answer"),
-        },
-        Token::Assign,
-        Token::Integer {
-            string: String::from("42"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "let answer = 42;";
 
     let expected_ast = vec![ast::Statement::LetStatement {
         identifier: String::from("answer"),
         expression: ast::Expression::IntegerLiteral { value: 42 },
     }];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_return_expression() {
-    let tokens = vec![
-        Token::Return,
-        Token::Integer {
-            string: String::from("12"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "return 12;";
 
     let expected_ast = vec![ast::Statement::ReturnStatement {
         expression: ast::Expression::IntegerLiteral { value: 12 },
     }];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_expression_statement() {
-    let tokens = vec![
-        Token::Integer {
-            string: String::from("42"),
-        },
-        Token::Semicolon,
-        Token::Identifier {
-            name: String::from("mandarina"),
-        },
-        Token::Semicolon,
-        Token::True,
-        Token::Semicolon,
-        Token::False,
-        Token::Semicolon,
-    ];
+    let program = "
+        42;
+        mandarina;
+        true;
+        false;
+    ";
 
     let expected_ast = vec![
         ast::Statement::ExpressionStatement {
@@ -80,23 +55,15 @@ fn test_expression_statement() {
         },
     ];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_prefix_expressions() {
-    let tokens = vec![
-        Token::Bang,
-        Token::Identifier {
-            name: String::from("n"),
-        },
-        Token::Semicolon,
-        Token::Minus,
-        Token::Integer {
-            string: String::from("22"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "
+        !n;
+        -22;
+    ";
 
     let expected_ast = vec![
         ast::Statement::ExpressionStatement {
@@ -115,21 +82,12 @@ fn test_prefix_expressions() {
         },
     ];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_sum_expression() {
-    let tokens = vec![
-        Token::Integer {
-            string: String::from("42"),
-        },
-        Token::Plus,
-        Token::Integer {
-            string: String::from("4"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "42 +4;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -138,21 +96,12 @@ fn test_sum_expression() {
             right: Box::new(ast::Expression::IntegerLiteral { value: 4 }),
         },
     }];
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_subtraction_expressions() {
-    let tokens = vec![
-        Token::Integer {
-            string: String::from("42"),
-        },
-        Token::Minus,
-        Token::Integer {
-            string: String::from("4"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "42-4;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -161,20 +110,11 @@ fn test_subtraction_expressions() {
             right: Box::new(ast::Expression::IntegerLiteral { value: 4 }),
         },
     }];
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 #[test]
 fn test_division_expressions() {
-    let tokens = vec![
-        Token::Identifier {
-            name: String::from("mandarina"),
-        },
-        Token::Slash,
-        Token::Identifier {
-            name: String::from("platan"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "mandarina / platan;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -187,20 +127,11 @@ fn test_division_expressions() {
             }),
         },
     }];
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 #[test]
 fn test_product_expressions() {
-    let tokens = vec![
-        Token::Identifier {
-            name: String::from("mandarina"),
-        },
-        Token::Asterisk,
-        Token::Identifier {
-            name: String::from("platan"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "mandarina * 2;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -208,25 +139,14 @@ fn test_product_expressions() {
             left: Box::new(ast::Expression::IdentifierExpression {
                 identifier: String::from("mandarina"),
             }),
-            right: Box::new(ast::Expression::IdentifierExpression {
-                identifier: String::from("platan"),
-            }),
+            right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
         },
     }];
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 #[test]
 fn test_equal_expressions() {
-    let tokens = vec![
-        Token::Identifier {
-            name: String::from("mandarina"),
-        },
-        Token::Equal,
-        Token::Integer {
-            string: String::from("51"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "mandarina == 52;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -234,23 +154,14 @@ fn test_equal_expressions() {
             left: Box::new(ast::Expression::IdentifierExpression {
                 identifier: String::from("mandarina"),
             }),
-            right: Box::new(ast::Expression::IntegerLiteral { value: 51 }),
+            right: Box::new(ast::Expression::IntegerLiteral { value: 52 }),
         },
     }];
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 #[test]
 fn test_not_equal_expressions() {
-    let tokens = vec![
-        Token::Identifier {
-            name: String::from("mandarina"),
-        },
-        Token::NotEqual,
-        Token::Integer {
-            string: String::from("51"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "mandarina != 51;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -261,20 +172,11 @@ fn test_not_equal_expressions() {
             right: Box::new(ast::Expression::IntegerLiteral { value: 51 }),
         },
     }];
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 #[test]
 fn test_less_than_expressions() {
-    let tokens = vec![
-        Token::Identifier {
-            name: String::from("mandarina"),
-        },
-        Token::LessThan,
-        Token::Integer {
-            string: String::from("51"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "mandarina < 51;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -285,68 +187,41 @@ fn test_less_than_expressions() {
             right: Box::new(ast::Expression::IntegerLiteral { value: 51 }),
         },
     }];
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 #[test]
 fn test_greater_than_expressions() {
-    let tokens = vec![
-        Token::Identifier {
-            name: String::from("mandarina"),
-        },
-        Token::GreaterThan,
-        Token::Integer {
-            string: String::from("51"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "51 > mandarina;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
             operation: ast::InfixOperation::GreaterThan,
-            left: Box::new(ast::Expression::IdentifierExpression {
+            left: Box::new(ast::Expression::IntegerLiteral { value: 51 }),
+            right: Box::new(ast::Expression::IdentifierExpression {
                 identifier: String::from("mandarina"),
             }),
-            right: Box::new(ast::Expression::IntegerLiteral { value: 51 }),
         },
     }];
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 #[test]
 fn test_less_than_equal_expressions() {
-    let tokens = vec![
-        Token::Identifier {
-            name: String::from("mandarina"),
-        },
-        Token::LessThanEqual,
-        Token::Integer {
-            string: String::from("51"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "51 <= mandarina;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
             operation: ast::InfixOperation::LessThanEqual,
-            left: Box::new(ast::Expression::IdentifierExpression {
+            left: Box::new(ast::Expression::IntegerLiteral { value: 51 }),
+            right: Box::new(ast::Expression::IdentifierExpression {
                 identifier: String::from("mandarina"),
             }),
-            right: Box::new(ast::Expression::IntegerLiteral { value: 51 }),
         },
     }];
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 #[test]
 fn test_greater_than_equal_expressions() {
-    let tokens = vec![
-        Token::Identifier {
-            name: String::from("mandarina"),
-        },
-        Token::GreaterThanEqual,
-        Token::Integer {
-            string: String::from("51"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "mandarina >= 51;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -357,25 +232,12 @@ fn test_greater_than_equal_expressions() {
             right: Box::new(ast::Expression::IntegerLiteral { value: 51 }),
         },
     }];
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_expression_precedence_1() {
-    let tokens = vec![
-        Token::Integer {
-            string: String::from("5"),
-        },
-        Token::Plus,
-        Token::Integer {
-            string: String::from("2"),
-        },
-        Token::Asterisk,
-        Token::Integer {
-            string: String::from("10"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "5 + 2 * 10;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -389,25 +251,12 @@ fn test_expression_precedence_1() {
         },
     }];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_expression_precedence_1_b() {
-    let tokens = vec![
-        Token::Integer {
-            string: String::from("5"),
-        },
-        Token::Asterisk,
-        Token::Integer {
-            string: String::from("2"),
-        },
-        Token::Plus,
-        Token::Integer {
-            string: String::from("10"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "5 * 2 + 10;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -421,22 +270,12 @@ fn test_expression_precedence_1_b() {
         },
     }];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_expression_precedence_2() {
-    let tokens = vec![
-        Token::Minus,
-        Token::Integer {
-            string: String::from("5"),
-        },
-        Token::Plus,
-        Token::Integer {
-            string: String::from("2"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "-5 + 2;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -449,25 +288,12 @@ fn test_expression_precedence_2() {
         },
     }];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_expression_precedence_3() {
-    let tokens = vec![
-        Token::Identifier {
-            name: String::from("a"),
-        },
-        Token::Plus,
-        Token::Identifier {
-            name: String::from("b"),
-        },
-        Token::Plus,
-        Token::Identifier {
-            name: String::from("c"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "a + b + c;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -487,37 +313,12 @@ fn test_expression_precedence_3() {
         },
     }];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_expression_precedence_4() {
-    let tokens = vec![
-        Token::Identifier {
-            name: String::from("a"),
-        },
-        Token::Plus,
-        Token::Identifier {
-            name: String::from("b"),
-        },
-        Token::Asterisk,
-        Token::Identifier {
-            name: String::from("c"),
-        },
-        Token::Plus,
-        Token::Identifier {
-            name: String::from("d"),
-        },
-        Token::Slash,
-        Token::Identifier {
-            name: String::from("e"),
-        },
-        Token::Minus,
-        Token::Identifier {
-            name: String::from("f"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "a+b*c+d/e-f;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -557,27 +358,12 @@ fn test_expression_precedence_4() {
         },
     }];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_grouped_expression_1() {
-    let tokens = vec![
-        Token::OpenParenthesis,
-        Token::Integer {
-            string: String::from("5"),
-        },
-        Token::Plus,
-        Token::Integer {
-            string: String::from("2"),
-        },
-        Token::CloseParenthesis,
-        Token::Asterisk,
-        Token::Integer {
-            string: String::from("10"),
-        },
-        Token::Semicolon,
-    ];
+    let program = "(5 + 2) * 10;";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -591,27 +377,12 @@ fn test_grouped_expression_1() {
         },
     }];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_grouped_expression_2() {
-    let tokens = vec![
-        Token::Integer {
-            string: String::from("5"),
-        },
-        Token::Asterisk,
-        Token::OpenParenthesis,
-        Token::Integer {
-            string: String::from("2"),
-        },
-        Token::Plus,
-        Token::Integer {
-            string: String::from("10"),
-        },
-        Token::CloseParenthesis,
-        Token::Semicolon,
-    ];
+    let program = "5 * ( 2 + 10 );";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -625,33 +396,12 @@ fn test_grouped_expression_2() {
         },
     }];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_grouped_expression_nested() {
-    let tokens = vec![
-        Token::Integer {
-            string: String::from("1"),
-        },
-        Token::Asterisk,
-        Token::OpenParenthesis,
-        Token::OpenParenthesis,
-        Token::Integer {
-            string: String::from("4"),
-        },
-        Token::Plus,
-        Token::Integer {
-            string: String::from("5"),
-        },
-        Token::CloseParenthesis,
-        Token::Asterisk,
-        Token::Integer {
-            string: String::from("8"),
-        },
-        Token::CloseParenthesis,
-        Token::Semicolon,
-    ];
+    let program = "1 * ((4 + 5) * 8);";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::InfixExpression {
@@ -669,42 +419,17 @@ fn test_grouped_expression_nested() {
         },
     }];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_if_expression() {
-    let tokens = vec![
-        Token::If,
-        Token::OpenParenthesis,
-        Token::Identifier {
-            name: String::from("x"),
-        },
-        Token::LessThanEqual,
-        Token::Integer {
-            string: String::from("7"),
-        },
-        Token::CloseParenthesis,
-        Token::OpenBrace,
-        Token::Let,
-        Token::Identifier {
-            name: String::from("z"),
-        },
-        Token::Assign,
-        Token::Identifier {
-            name: String::from("x"),
-        },
-        Token::Asterisk,
-        Token::Integer {
-            string: String::from("2"),
-        },
-        Token::Semicolon,
-        Token::Identifier {
-            name: String::from("z"),
-        },
-        Token::CloseBrace,
-        Token::Semicolon,
-    ];
+    let program = "
+        if (x <= 7) {
+            let z = x * 2;
+            z
+        };
+        ";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::IfExpression {
@@ -736,48 +461,19 @@ fn test_if_expression() {
         },
     }];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
 }
 
 #[test]
 fn test_if_else_expression() {
-    let tokens = vec![
-        Token::If,
-        Token::OpenParenthesis,
-        Token::Identifier {
-            name: String::from("x"),
-        },
-        Token::LessThanEqual,
-        Token::Integer {
-            string: String::from("7"),
-        },
-        Token::CloseParenthesis,
-        Token::OpenBrace,
-        Token::Let,
-        Token::Identifier {
-            name: String::from("z"),
-        },
-        Token::Assign,
-        Token::Identifier {
-            name: String::from("x"),
-        },
-        Token::Asterisk,
-        Token::Integer {
-            string: String::from("2"),
-        },
-        Token::Semicolon,
-        Token::Identifier {
-            name: String::from("z"),
-        },
-        Token::CloseBrace,
-        Token::Else,
-        Token::OpenBrace,
-        Token::Integer {
-            string: String::from("14"),
-        },
-        Token::CloseBrace,
-        Token::Semicolon,
-    ];
+    let program = "
+        if (x <= 7) {
+            let z = x * 2;
+            z
+        } else {
+            14
+        };
+        ";
 
     let expected_ast = vec![ast::Statement::ExpressionStatement {
         expression: ast::Expression::IfExpression {
@@ -811,5 +507,48 @@ fn test_if_else_expression() {
         },
     }];
 
-    assert_eq!(parse_tokens(tokens), expected_ast);
+    assert_eq!(parse(program), expected_ast);
+}
+
+#[test]
+fn test_assign_if_expression() {
+    let program = "
+        let a = if (x <= 7) {
+            let z = x * 2;
+            z
+        };
+        ";
+
+    let expected_ast = vec![ast::Statement::LetStatement {
+        identifier: String::from("a"),
+        expression: ast::Expression::IfExpression {
+            condition: Box::new(ast::Expression::InfixExpression {
+                operation: ast::InfixOperation::LessThanEqual,
+                left: Box::new(ast::Expression::IdentifierExpression {
+                    identifier: String::from("x"),
+                }),
+                right: Box::new(ast::Expression::IntegerLiteral { value: 7 }),
+            }),
+            consequence: vec![
+                ast::Statement::LetStatement {
+                    identifier: String::from("z"),
+                    expression: ast::Expression::InfixExpression {
+                        operation: ast::InfixOperation::Product,
+                        left: Box::new(ast::Expression::IdentifierExpression {
+                            identifier: String::from("x"),
+                        }),
+                        right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
+                    },
+                },
+                ast::Statement::ReturnStatement {
+                    expression: ast::Expression::IdentifierExpression {
+                        identifier: String::from("z"),
+                    },
+                },
+            ],
+            alternative: None,
+        },
+    }];
+
+    assert_eq!(parse(program), expected_ast);
 }

@@ -1,5 +1,4 @@
-use lexer::{Lexer, Token};
-use std::iter::Iterator;
+use parser::Parser;
 
 use std::io;
 
@@ -7,7 +6,7 @@ pub fn run() {
     loop {
         let mut line = String::new();
         io::stdin().read_line(&mut line).unwrap();
-        let tokens: Vec<Token> = Lexer::new(line.chars()).collect();
-        println!("{:?}", tokens);
+        let program = Parser::new(line.chars()).parse_program();
+        println!("{:?}", program);
     }
 }

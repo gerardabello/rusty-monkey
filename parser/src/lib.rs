@@ -1,6 +1,7 @@
-use lexer::Token;
-
 pub mod ast;
+mod lexer;
+
+use lexer::Token;
 
 #[derive(PartialOrd, PartialEq)]
 enum Precedence {
@@ -36,15 +37,16 @@ pub enum ParseError {
     MissingSemicolon,
 }
 
-pub struct Parser<T: Iterator<Item = Token>> {
-    iter: T,
+pub struct Parser<T: Iterator<Item = char>> {
+    lexer: lexer::Lexer<T>,
     token_buffer: Vec<Token>,
 }
 
-impl<T: Iterator<Item = Token>> Parser<T> {
+
+impl<T: Iterator<Item = char>> Parser<T> {
     pub fn new(iter: T) -> Self {
         Parser {
-            iter,
+            lexer: lexer::Lexer::new(iter),
             token_buffer: Vec::new(),
         }
     }
@@ -52,7 +54,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
     fn next_token(&mut self) -> Option<Token> {
         match self.token_buffer.pop() {
             Some(t) => Some(t),
-            None => self.iter.next(),
+            None => self.lexer.next(),
         }
     }
 

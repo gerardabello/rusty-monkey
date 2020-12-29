@@ -5,4 +5,4 @@ authors = ["Gerard Abelló Serras <gerardabello@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-lexer = { version = "0.1", path = "../lexer" }
+parser = { version = "0.1", path = "../parser" }

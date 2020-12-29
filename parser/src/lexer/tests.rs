@@ -1,4 +1,4 @@
-use lexer::{Lexer, Token};
+use super::{Lexer, Token};
 
 fn lex_string(code: &str) -> Vec<Token> {
     Lexer::new(code.chars()).collect()
