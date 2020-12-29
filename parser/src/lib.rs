@@ -59,13 +59,29 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         self.token_buffer.push(t);
     }
 
+    fn peek_next_token(&mut self) -> Option<&Token> {
+        if self.token_buffer.is_empty() {
+            match self.next_token() {
+                Some(t) => self.save_token(t),
+                None => return None,
+            }
+        }
+
+        Some(&self.token_buffer[0])
+    }
+
+    fn skip_token(&mut self) -> Result<(), ParseError> {
+        match self.next_token() {
+            Some(_) => Ok(()),
+            None => Err(ParseError::UnexpectedEnd),
+        }
+    }
+
     fn skip_token_expecting(&mut self, compare_to: Token) -> Result<(), ParseError> {
         if let Some(t) = self.next_token() {
             if t == compare_to {
                 return Ok(());
             }
-
-            self.save_token(t.clone());
 
             return Err(ParseError::UnexpectedToken {
                 token: t,
@@ -138,13 +154,9 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         }
 
         self.skip_token_expecting(Token::CloseBrace)?;
-        match self.skip_token_expecting(Token::Else) {
-            Err(_) => Ok(ast::Expression::IfExpression {
-                condition: Box::new(condition),
-                consequence,
-                alternative: None,
-            }),
-            Ok(()) => {
+        match self.peek_next_token() {
+            Some(Token::Else) => {
+                self.skip_token()?;
                 self.skip_token_expecting(Token::OpenBrace)?;
 
                 let mut alternative: Vec<ast::Statement> = Vec::new();
@@ -167,6 +179,12 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                     alternative: Some(alternative),
                 })
             }
+
+            _ => Ok(ast::Expression::IfExpression {
+                condition: Box::new(condition),
+                consequence,
+                alternative: None,
+            }),
         }
     }
 
@@ -306,11 +324,13 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 return Some(Err(e));
             }
 
-            if self.skip_token_expecting(Token::Semicolon).is_err() {
-                return Some(Ok((statement.unwrap(), true)));
-            }
-
-            return Some(Ok((statement.unwrap(), false)));
+            match self.peek_next_token() {
+                Some(Token::Semicolon) => {
+                    self.skip_token();
+                    return Some(Ok((statement.unwrap(), false)));
+                    },
+                _ => return Some(Ok((statement.unwrap(), true))),
+            };
         }
 
         None
