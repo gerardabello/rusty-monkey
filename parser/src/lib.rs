@@ -137,12 +137,14 @@ impl<T: Iterator<Item = char>> Parser<T> {
         }
     }
 
-    pub fn parse_statement_block(&mut self) -> Result<Vec<ast::Statement>, ParseError> {
+    pub fn parse_statement_list(&mut self) -> Result<Vec<ast::Statement>, ParseError> {
         let mut block: Vec<ast::Statement> = Vec::new();
 
-        self.skip_token_expecting(Token::OpenBrace)?;
-
         loop {
+            if self.peek_next_token().is_none() {
+                break;
+            }
+
             let statement = self.parse_statement()?;
             match self.peek_next_token() {
                 Some(Token::Semicolon) => {
@@ -150,7 +152,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
                         .expect("We just peeked, so there must be a semicolon here");
                     block.push(statement);
                 }
-                Some(_) => {
+                _ => {
                     if let ast::Statement::ExpressionStatement { expression } = statement {
                         // If there is no semicolon after statement, and it is a expression,
                         // transform it to a return statement;
@@ -160,11 +162,8 @@ impl<T: Iterator<Item = char>> Parser<T> {
                     // No-semicolon is not allowed for other types of statements
                     return Err(ParseError::MissingSemicolon);
                 }
-                None => return Err(ParseError::UnexpectedEnd),
             }
         }
-
-        self.skip_token_expecting(Token::CloseBrace)?;
 
         Ok(block)
     }
@@ -224,7 +223,9 @@ impl<T: Iterator<Item = char>> Parser<T> {
             })
             .collect::<Vec<_>>();
 
-        let body: Vec<ast::Statement> = self.parse_statement_block()?;
+        self.skip_token_expecting(Token::OpenBrace)?;
+        let body: Vec<ast::Statement> = self.parse_statement_list()?;
+        self.skip_token_expecting(Token::CloseBrace)?;
 
         Ok(ast::Expression::FunctionExpression { arguments, body })
     }
@@ -234,12 +235,16 @@ impl<T: Iterator<Item = char>> Parser<T> {
         let condition = self.parse_expression(Precedence::Lowest)?;
         self.skip_token_expecting(Token::CloseParenthesis)?;
 
-        let consequence: Vec<ast::Statement> = self.parse_statement_block()?;
+        self.skip_token_expecting(Token::OpenBrace)?;
+        let consequence: Vec<ast::Statement> = self.parse_statement_list()?;
+        self.skip_token_expecting(Token::CloseBrace)?;
 
         match self.peek_next_token() {
             Some(Token::Else) => {
                 self.skip_token()?;
-                let alternative: Vec<ast::Statement> = self.parse_statement_block()?;
+                self.skip_token_expecting(Token::OpenBrace)?;
+                let alternative: Vec<ast::Statement> = self.parse_statement_list()?;
+                self.skip_token_expecting(Token::CloseBrace)?;
 
                 Ok(ast::Expression::IfExpression {
                     condition: Box::new(condition),
@@ -364,7 +369,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
             return Some(self.parse_infix_expression(operation, left));
         }
 
-        Some(Err(ParseError::UnexpectedEnd))
+        None
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<ast::Expression, ParseError> {
@@ -405,19 +410,6 @@ impl<T: Iterator<Item = char>> Parser<T> {
     }
 
     pub fn parse_program(&mut self) -> Result<ast::Program, ParseError> {
-        let mut program: ast::Program = Vec::new();
-        loop {
-            if self.peek_next_token().is_none() {
-                break;
-            }
-            let statement = self.parse_statement()?;
-
-            // In the program (not inside a statement block) semicolons are always required after
-            // statements.
-            self.skip_token_expecting(Token::Semicolon)?;
-            program.push(statement);
-        }
-
-        Ok(program)
+        self.parse_statement_list()
     }
 }

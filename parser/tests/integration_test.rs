@@ -35,6 +35,17 @@ fn test_return_expression() {
 }
 
 #[test]
+fn test_implicit_return_expression() {
+    let program = "12";
+
+    let expected_ast = vec![ast::Statement::ReturnStatement {
+        expression: ast::Expression::IntegerLiteral { value: 12 },
+    }];
+
+    assert_eq!(parse(program), expected_ast);
+}
+
+#[test]
 fn test_expression_statement() {
     let program = "
         42;
