@@ -37,31 +37,26 @@ pub enum ParseError {
 
 pub struct Parser<T: Iterator<Item = Token>> {
     iter: T,
-    saved_token: Option<Token>,
+    token_buffer: Vec<Token>,
 }
 
 impl<T: Iterator<Item = Token>> Parser<T> {
     pub fn new(iter: T) -> Self {
         Parser {
             iter,
-            saved_token: None,
+            token_buffer: Vec::new(),
         }
     }
 
     fn next_token(&mut self) -> Option<Token> {
-        let saved_token = std::mem::replace(&mut self.saved_token, None);
-        if let Some(t) = saved_token {
-            self.saved_token = None;
-            return Some(t);
+        match self.token_buffer.pop() {
+            Some(t) => Some(t),
+            None => self.iter.next()
         }
-        if let Some(t) = self.iter.next() {
-            return Some(t);
-        }
-        None
     }
 
     fn save_token(&mut self, t: Token) {
-        self.saved_token = Some(t)
+        self.token_buffer.push(t);
     }
 
     fn skip_token_expecting(&mut self, compare_to: Token) -> Result<(), ParseError> {
