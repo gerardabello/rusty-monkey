@@ -25,7 +25,7 @@ fn eval_product_expression(left: &Expression, right: &Expression) -> Result<Obje
 
     let ret = match (left_v, right_v) {
         (Object::Integer(a), Object::Integer(b)) => Object::Integer(a * b),
-        _ => panic!("Sum not implemented for {:?} and {:?}", left, right),
+        _ => panic!("Product not implemented for {:?} and {:?}", left, right),
     };
 
     Ok(ret)
