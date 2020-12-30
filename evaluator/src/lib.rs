@@ -1,83 +1,29 @@
 pub mod object;
 
-use parser::ast::{Expression, InfixOperation, Statement};
+mod infix;
+mod prefix;
+mod condition;
 
 use object::Object;
+use parser::ast::{Expression, InfixOperation, PrefixOperation, Statement};
 
 #[derive(PartialEq, Debug)]
 pub enum EvaluationError {
-    OperationNotImplemented{operation: InfixOperation, left: Expression, right :Expression},
-    UnexpectedType{value: Expression, expected: &'static str}
+    InfixOperationNotImplemented {
+        operation: InfixOperation,
+        left: Object,
+        right: Object,
+    },
+    PrefixOperationNotImplemented {
+        operation: PrefixOperation,
+        right: Object,
+    },
+    UnexpectedType {
+        value: Object,
+        expected: &'static str,
+    },
 }
 
-fn eval_sum_expression(left: &Expression, right: &Expression) -> Result<Object, EvaluationError> {
-    let left_v = eval_expression(left)?;
-    let right_v = eval_expression(right)?;
-
-    match (left_v, right_v) {
-        (Object::Integer(a), Object::Integer(b)) => Ok(Object::Integer(a + b)),
-        _ => Err(EvaluationError::OperationNotImplemented{operation: InfixOperation::Sum, left: left.clone(), right: right.clone()})
-    }
-}
-
-fn eval_product_expression(left: &Expression, right: &Expression) -> Result<Object, EvaluationError> {
-    let left_v = eval_expression(left)?;
-    let right_v = eval_expression(right)?;
-
-    match (left_v, right_v) {
-        (Object::Integer(a), Object::Integer(b)) => Ok(Object::Integer(a * b)),
-        _ => Err(EvaluationError::OperationNotImplemented{operation: InfixOperation::Product, left: left.clone(), right: right.clone()})
-    }
-}
-
-fn eval_subtract_expression(left: &Expression, right: &Expression) -> Result<Object, EvaluationError> {
-    let left_v = eval_expression(left)?;
-    let right_v = eval_expression(right)?;
-
-    match (left_v, right_v) {
-        (Object::Integer(a), Object::Integer(b)) => Ok(Object::Integer(a - b)),
-        _ => Err(EvaluationError::OperationNotImplemented{operation: InfixOperation::Subtraction, left: left.clone(), right: right.clone()})
-    }
-}
-
-fn eval_division_expression(left: &Expression, right: &Expression) -> Result<Object, EvaluationError> {
-    let left_v = eval_expression(left)?;
-    let right_v = eval_expression(right)?;
-
-    match (left_v, right_v) {
-        (Object::Integer(a), Object::Integer(b)) => Ok(Object::Integer(a / b)),
-        _ => Err(EvaluationError::OperationNotImplemented{operation: InfixOperation::Division, left: left.clone(), right: right.clone()})
-    }
-}
-
-fn eval_infix_expression(
-    operation: &InfixOperation,
-    left: &Expression,
-    right: &Expression,
-) -> Result<Object, EvaluationError> {
-    match operation {
-        InfixOperation::Sum => eval_sum_expression(left, right),
-        InfixOperation::Product => eval_product_expression(left, right),
-        InfixOperation::Subtraction => eval_subtract_expression(left, right),
-        InfixOperation::Division => eval_division_expression(left, right),
-        _ => Err(EvaluationError::OperationNotImplemented{operation: operation.clone(), left: left.clone(), right: right.clone()})
-    }
-}
-
-fn eval_if_expression(
-    condition: &Expression,
-    consequence: &[Statement],
-    alternative: &Option<Vec<Statement>>,
-) -> Result<Object, EvaluationError> {
-    match eval_expression(condition)? {
-        Object::Bool(true) => eval_statements(consequence),
-        Object::Bool(false) => match alternative {
-            None => Ok(Object::Null),
-            Some(alt) => eval_statements(alt),
-        },
-        _ => Err(EvaluationError::UnexpectedType{value: condition.clone(), expected: "bool"})
-    }
-}
 
 fn eval_expression(expression: &Expression) -> Result<Object, EvaluationError> {
     match expression {
@@ -87,8 +33,13 @@ fn eval_expression(expression: &Expression) -> Result<Object, EvaluationError> {
             operation,
             right,
             left,
-        } => eval_infix_expression(operation, left, right),
-        Expression::IfExpression { condition, consequence, alternative } => eval_if_expression(condition, consequence, alternative),
+        } => infix::eval(operation, left, right),
+        Expression::IfExpression {
+            condition,
+            consequence,
+            alternative,
+        } => condition::eval(condition, consequence, alternative),
+        Expression::PrefixExpression { operation, right } => prefix::eval(operation, right),
         _ => panic!("Not implemented"),
     }
 }

@@ -11,7 +11,6 @@ enum Precedence {
     Sum,
     Product,
     Prefix,
-    Call,
 }
 
 fn infix_operator_precedence(operation: &ast::InfixOperation) -> Precedence {
