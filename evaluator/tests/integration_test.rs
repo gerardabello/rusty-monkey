@@ -112,3 +112,53 @@ fn test_double_let() {
     assert_eq!(run(program), Ok(Object::Integer(14)));
 }
 
+#[test]
+fn test_function_1() {
+    let program = "
+    let add= fn (a,b) { a + b };
+    add(5,6)
+        ";
+    assert_eq!(run(program), Ok(Object::Integer(11)));
+}
+
+#[test]
+fn test_call_null() {
+    let program = "
+    add(5)
+        ";
+    assert_eq!(
+        run(program),
+        Err(EvaluationError::NotCallable {
+            value: Object::Null
+        })
+    );
+}
+
+#[test]
+fn test_call_integer() {
+    let program = "
+    3(5)
+        ";
+    assert_eq!(
+        run(program),
+        Err(EvaluationError::NotCallable {
+            value: Object::Integer(3)
+        })
+    );
+}
+
+/*
+#[test]
+fn test_function_2() {
+    let program = "
+    let addDoubles = fn (a,b) {
+        let ad = a * 2;
+        let bd = b * 2;
+        return ad + bd;
+    };
+
+    addDoubles(5,6)
+        ";
+    assert_eq!(run(program), Ok(Object::Integer(22)));
+}
+*/

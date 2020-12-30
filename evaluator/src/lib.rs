@@ -24,6 +24,39 @@ pub enum EvaluationError {
         value: Object,
         expected: &'static str,
     },
+    NotCallable {
+        value: Object,
+    },
+}
+
+fn eval_call_expression(
+    env: &mut Environment,
+    function: &Expression,
+    arguments: &[Expression],
+) -> Result<Object, EvaluationError> {
+    let function_value = eval_expression(env, function)?;
+
+    let (arg_names, body) = match function_value {
+        Object::Function(arguments, body) => (arguments, body),
+        _ => {
+            return Err(EvaluationError::NotCallable {
+                value: function_value.clone(),
+            })
+        }
+    };
+
+    let arg_values = arguments
+        .iter()
+        .flat_map(|a| eval_expression(env, a))
+        .collect::<Vec<_>>();
+
+    let mut new_env = Environment::new();
+
+    for (k, v) in arg_names.iter().zip(arg_values) {
+        new_env.set(k.to_owned(), v);
+    }
+
+    eval_statements(&mut new_env, &body)
 }
 
 fn eval_expression(
@@ -45,7 +78,13 @@ fn eval_expression(
             alternative,
         } => condition::eval(env, condition, consequence, alternative),
         Expression::PrefixExpression { operation, right } => prefix::eval(env, operation, right),
-        _ => panic!("Not implemented"),
+        Expression::FunctionExpression { arguments, body } => {
+            Ok(Object::Function(arguments.to_owned(), body.to_owned()))
+        }
+        Expression::CallExpression {
+            arguments,
+            function,
+        } => eval_call_expression(env, function, arguments),
     }
 }
 
