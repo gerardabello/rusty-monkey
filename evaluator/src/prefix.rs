@@ -1,9 +1,9 @@
 use parser::ast::{Expression, PrefixOperation};
 
-use super::{eval_expression, object::Object, EvaluationError};
+use super::{env::Environment, eval_expression, object::Object, EvaluationError};
 
-fn eval_negative(right: &Expression) -> Result<Object, EvaluationError> {
-    let v = eval_expression(right)?;
+fn eval_negative(env: &mut Environment, right: &Expression) -> Result<Object, EvaluationError> {
+    let v = eval_expression(env, right)?;
 
     match v {
         Object::Integer(a) => Ok(Object::Integer(-a)),
@@ -14,8 +14,8 @@ fn eval_negative(right: &Expression) -> Result<Object, EvaluationError> {
     }
 }
 
-fn eval_negate(right: &Expression) -> Result<Object, EvaluationError> {
-    let v = eval_expression(right)?;
+fn eval_negate(env: &mut Environment, right: &Expression) -> Result<Object, EvaluationError> {
+    let v = eval_expression(env, right)?;
 
     match v {
         Object::Bool(a) => Ok(Object::Bool(!a)),
@@ -26,9 +26,13 @@ fn eval_negate(right: &Expression) -> Result<Object, EvaluationError> {
     }
 }
 
-pub fn eval(operation: &PrefixOperation, right: &Expression) -> Result<Object, EvaluationError> {
+pub fn eval(
+    env: &mut Environment,
+    operation: &PrefixOperation,
+    right: &Expression,
+) -> Result<Object, EvaluationError> {
     match operation {
-        PrefixOperation::Negate => eval_negate(right),
-        PrefixOperation::Negative => eval_negative(right),
+        PrefixOperation::Negate => eval_negate(env, right),
+        PrefixOperation::Negative => eval_negative(env, right),
     }
 }

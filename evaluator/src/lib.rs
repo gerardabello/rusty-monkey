@@ -1,9 +1,11 @@
 pub mod object;
 
+mod condition;
+mod env;
 mod infix;
 mod prefix;
-mod condition;
 
+use env::Environment;
 use object::Object;
 use parser::ast::{Expression, InfixOperation, PrefixOperation, Statement};
 
@@ -24,39 +26,56 @@ pub enum EvaluationError {
     },
 }
 
-
-fn eval_expression(expression: &Expression) -> Result<Object, EvaluationError> {
+fn eval_expression(
+    env: &mut Environment,
+    expression: &Expression,
+) -> Result<Object, EvaluationError> {
     match expression {
         Expression::IntegerLiteral { value } => Ok(Object::Integer(*value)),
         Expression::Boolean { value } => Ok(Object::Bool(*value)),
+        Expression::IdentifierExpression { identifier } => Ok(env.get(identifier)),
         Expression::InfixExpression {
             operation,
             right,
             left,
-        } => infix::eval(operation, left, right),
+        } => infix::eval(env, operation, left, right),
         Expression::IfExpression {
             condition,
             consequence,
             alternative,
-        } => condition::eval(condition, consequence, alternative),
-        Expression::PrefixExpression { operation, right } => prefix::eval(operation, right),
+        } => condition::eval(env, condition, consequence, alternative),
+        Expression::PrefixExpression { operation, right } => prefix::eval(env, operation, right),
         _ => panic!("Not implemented"),
     }
 }
 
-fn eval_statement(statement: &Statement) -> Result<Option<Object>, EvaluationError> {
+fn eval_statement(
+    env: &mut Environment,
+    statement: &Statement,
+) -> Result<Option<Object>, EvaluationError> {
     match statement {
-        Statement::ReturnStatement { expression } => match eval_expression(expression) {
+        Statement::ReturnStatement { expression } => match eval_expression(env, expression) {
             Err(e) => Err(e),
             Ok(v) => Ok(Some(v)),
         },
+        Statement::LetStatement {
+            identifier,
+            expression,
+        } => {
+            let val = eval_expression(env, expression)?;
+            env.set(identifier.clone(), val);
+            Ok(None)
+        }
         _ => panic!("Not implemented"),
     }
 }
 
-fn eval_statements(statements: &[Statement]) -> Result<Object, EvaluationError> {
+fn eval_statements(
+    env: &mut Environment,
+    statements: &[Statement],
+) -> Result<Object, EvaluationError> {
     for statement in statements {
-        match eval_statement(statement) {
+        match eval_statement(env, statement) {
             Err(e) => return Err(e),
             Ok(Some(v)) => return Ok(v),
             Ok(None) => {}
@@ -67,5 +86,6 @@ fn eval_statements(statements: &[Statement]) -> Result<Object, EvaluationError> 
 }
 
 pub fn eval_program(program: &[Statement]) -> Result<Object, EvaluationError> {
-    eval_statements(program)
+    let mut env = Environment::new();
+    eval_statements(&mut env, program)
 }

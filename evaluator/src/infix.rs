@@ -1,10 +1,14 @@
 use parser::ast::{Expression, InfixOperation};
 
-use super::{eval_expression, object::Object, EvaluationError};
+use super::{env::Environment, eval_expression, object::Object, EvaluationError};
 
-fn eval_sum_expression(left: &Expression, right: &Expression) -> Result<Object, EvaluationError> {
-    let left_v = eval_expression(left)?;
-    let right_v = eval_expression(right)?;
+fn eval_sum_expression(
+    env: &mut Environment,
+    left: &Expression,
+    right: &Expression,
+) -> Result<Object, EvaluationError> {
+    let left_v = eval_expression(env, left)?;
+    let right_v = eval_expression(env, right)?;
 
     match (left_v, right_v) {
         (Object::Integer(a), Object::Integer(b)) => Ok(Object::Integer(a + b)),
@@ -17,11 +21,12 @@ fn eval_sum_expression(left: &Expression, right: &Expression) -> Result<Object, 
 }
 
 fn eval_product_expression(
+    env: &mut Environment,
     left: &Expression,
     right: &Expression,
 ) -> Result<Object, EvaluationError> {
-    let left_v = eval_expression(left)?;
-    let right_v = eval_expression(right)?;
+    let left_v = eval_expression(env, left)?;
+    let right_v = eval_expression(env, right)?;
 
     match (left_v, right_v) {
         (Object::Integer(a), Object::Integer(b)) => Ok(Object::Integer(a * b)),
@@ -34,11 +39,12 @@ fn eval_product_expression(
 }
 
 fn eval_subtract_expression(
+    env: &mut Environment,
     left: &Expression,
     right: &Expression,
 ) -> Result<Object, EvaluationError> {
-    let left_v = eval_expression(left)?;
-    let right_v = eval_expression(right)?;
+    let left_v = eval_expression(env, left)?;
+    let right_v = eval_expression(env, right)?;
 
     match (left_v, right_v) {
         (Object::Integer(a), Object::Integer(b)) => Ok(Object::Integer(a - b)),
@@ -51,11 +57,12 @@ fn eval_subtract_expression(
 }
 
 fn eval_division_expression(
+    env: &mut Environment,
     left: &Expression,
     right: &Expression,
 ) -> Result<Object, EvaluationError> {
-    let left_v = eval_expression(left)?;
-    let right_v = eval_expression(right)?;
+    let left_v = eval_expression(env, left)?;
+    let right_v = eval_expression(env, right)?;
 
     match (left_v, right_v) {
         (Object::Integer(a), Object::Integer(b)) => Ok(Object::Integer(a / b)),
@@ -68,15 +75,16 @@ fn eval_division_expression(
 }
 
 pub fn eval(
+    env: &mut Environment,
     operation: &InfixOperation,
     left: &Expression,
     right: &Expression,
 ) -> Result<Object, EvaluationError> {
     match operation {
-        InfixOperation::Sum => eval_sum_expression(left, right),
-        InfixOperation::Product => eval_product_expression(left, right),
-        InfixOperation::Subtraction => eval_subtract_expression(left, right),
-        InfixOperation::Division => eval_division_expression(left, right),
+        InfixOperation::Sum => eval_sum_expression(env, left, right),
+        InfixOperation::Product => eval_product_expression(env, left, right),
+        InfixOperation::Subtraction => eval_subtract_expression(env, left, right),
+        InfixOperation::Division => eval_division_expression(env, left, right),
         _ => panic!("Not implemented"),
     }
 }

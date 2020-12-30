@@ -93,3 +93,22 @@ fn test_negate() {
     let program = "!true";
     assert_eq!(run(program), Ok(Object::Bool(false)));
 }
+
+#[test]
+fn test_multiple_return() {
+    let program = "return 10; return 6;";
+    assert_eq!(run(program), Ok(Object::Integer(10)));
+}
+
+#[test]
+fn test_let() {
+    let program = "let x = 10 * 5; x";
+    assert_eq!(run(program), Ok(Object::Integer(50)));
+}
+
+#[test]
+fn test_double_let() {
+    let program = "let x = 7; let y = x * 2; y";
+    assert_eq!(run(program), Ok(Object::Integer(14)));
+}
+
