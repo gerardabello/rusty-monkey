@@ -613,6 +613,32 @@ fn test_function_expression() {
 }
 
 #[test]
+fn test_function_expression_with_return() {
+    let program = "
+        fn (a) {
+          return a * 2;
+        }
+        ";
+
+    let expected_ast = vec![ast::Statement::ReturnStatement {
+        expression: ast::Expression::FunctionExpression {
+            arguments: vec![String::from("a")],
+            body: vec![ast::Statement::ReturnStatement {
+                expression: ast::Expression::InfixExpression {
+                    operation: ast::InfixOperation::Product,
+                    left: Box::new(ast::Expression::IdentifierExpression {
+                        identifier: String::from("a"),
+                    }),
+                    right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
+                },
+            }],
+        },
+    }];
+
+    assert_eq!(parse(program), expected_ast);
+}
+
+#[test]
 fn test_function_expression_with_expression_arguments() {
     let program = "
         fn (a + b) {

@@ -140,8 +140,10 @@ impl<T: Iterator<Item = char>> Parser<T> {
         let mut block: Vec<ast::Statement> = Vec::new();
 
         loop {
-            if self.peek_next_token().is_none() {
-                break;
+            match self.peek_next_token() {
+                None => break,
+                Some(Token::CloseBrace) => break,
+                _ => {}
             }
 
             let statement = self.parse_statement()?;
