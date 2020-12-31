@@ -173,6 +173,11 @@ impl<T: Iterator<Item = char>> Parser<T> {
         let mut list: Vec<ast::Expression> = Vec::new();
         self.skip_token_expecting(Token::OpenParenthesis)?;
 
+        if let Some(Token::CloseParenthesis) = self.peek_next_token() {
+            self.skip_token().expect("We just peeked");
+            return Ok(list);
+        };
+
         loop {
             let expression = self.parse_expression(Precedence::Lowest)?;
 

@@ -613,6 +613,26 @@ fn test_function_expression() {
 }
 
 #[test]
+fn test_function_expression_without_arguments() {
+    let program = "
+        fn () {
+          5
+        }
+        ";
+
+    let expected_ast = vec![ast::Statement::ReturnStatement {
+        expression: ast::Expression::FunctionExpression {
+            arguments: vec![],
+            body: vec![ast::Statement::ReturnStatement {
+                expression: ast::Expression::IntegerLiteral { value: 5 },
+            }],
+        },
+    }];
+
+    assert_eq!(parse(program), expected_ast);
+}
+
+#[test]
 fn test_function_expression_with_return() {
     let program = "
         fn (a) {
