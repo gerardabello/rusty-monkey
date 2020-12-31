@@ -12,6 +12,7 @@ pub enum Object {
     Bool(bool),
     Str(String),
     Function(Vec<String>, Vec<Statement>, Rc<RefCell<Environment>>),
+    BuiltInFunction(String),
 }
 
 impl PartialEq for Object {
@@ -20,6 +21,7 @@ impl PartialEq for Object {
             (Object::Integer(v1), Object::Integer(v2)) => v1 == v2,
             (Object::Bool(v1), Object::Bool(v2)) => v1 == v2,
             (Object::Str(v1), Object::Str(v2)) => v1 == v2,
+            (Object::BuiltInFunction(v1), Object::BuiltInFunction(v2)) => v1 == v2,
             (Object::Null, Object::Null) => true,
             _ => false,
         }
@@ -34,6 +36,7 @@ impl std::fmt::Debug for Object {
             Object::Bool(v) => f.debug_tuple("Bool").field(v).finish(),
             Object::Str(v) => f.debug_tuple("Str").field(v).finish(),
             Object::Function(args, _, _) => f.debug_tuple("Function").field(args).finish(),
+            Object::BuiltInFunction(name) => f.debug_tuple("BuiltInFunction").field(name).finish(),
         }
     }
 }

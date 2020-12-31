@@ -41,7 +41,15 @@ fn eval_expression(
         Expression::IntegerLiteral { value } => Ok(Object::Integer(*value)),
         Expression::StringLiteral { value } => Ok(Object::Str(value.clone())),
         Expression::Boolean { value } => Ok(Object::Bool(*value)),
-        Expression::IdentifierExpression { identifier } => Ok(Environment::get_rr(env, identifier)),
+        Expression::IdentifierExpression { identifier } => {
+            match Environment::get_rr(env, identifier) {
+                Object::Null => match identifier.as_ref() {
+                    "print" | "time" => Ok(Object::BuiltInFunction(identifier.clone())),
+                    _ => Ok(Object::Null),
+                },
+                o => Ok(o),
+            }
+        }
         Expression::InfixExpression {
             operation,
             right,
@@ -79,8 +87,8 @@ fn eval_statement(
             let val = eval_expression(env, expression)?;
             Environment::set_rr(env, identifier.clone(), val);
             Ok(None)
-        },
-        Statement::ExpressionStatement {expression}=> {
+        }
+        Statement::ExpressionStatement { expression } => {
             eval_expression(env, expression)?;
             Ok(None)
         }
