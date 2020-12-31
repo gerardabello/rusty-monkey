@@ -7,6 +7,7 @@ mod tests;
 pub enum Token {
     Identifier { name: String },
     Integer { string: String },
+    StringLiteral { string: String },
     Let,
     If,
     Else,
@@ -34,9 +35,6 @@ pub enum Token {
     CloseParenthesis,
     OpenBrace,
     CloseBrace,
-
-    SingleQuote,
-    DoubleQuote,
 
     Comma,
     Semicolon,
@@ -193,6 +191,23 @@ impl<T: Iterator<Item = char>> Lexer<T> {
         }
     }
 
+    fn next_string_literal_token(&mut self) -> Token {
+        let mut string = String::new();
+        loop {
+            if let Some(c) = self.next_char() {
+                if c != '"'{
+                    string.push(c);
+                    continue;
+                } else {
+                    break;
+                }
+            }
+            break;
+        }
+
+        Token::StringLiteral { string }
+    }
+
     fn next_token(&mut self) -> Option<Token> {
         if let Some(c) = self.next_char_skipping_whitespace() {
             return match c {
@@ -206,12 +221,11 @@ impl<T: Iterator<Item = char>> Lexer<T> {
                 '{' => Some(Token::OpenBrace),
                 '}' => Some(Token::CloseBrace),
                 ',' => Some(Token::Comma),
-                '"' => Some(Token::DoubleQuote),
-                '\'' => Some(Token::SingleQuote),
                 '!' => self.next_token_starting_with_bang(),
                 '=' => self.next_token_starting_with_equal(),
                 '<' => self.next_token_starting_with_less_than(),
                 '>' => self.next_token_starting_with_greater_than(),
+                '"' => Some(self.next_string_literal_token()),
                 c if is_letter(c) => Some(self.next_word_token(c)),
                 c if is_number(c) => Some(self.next_number_token(c)),
                 _ => panic!(format!("Unexpected character '{}'", c)),

@@ -39,6 +39,7 @@ fn eval_expression(
 ) -> Result<Object, EvaluationError> {
     match expression {
         Expression::IntegerLiteral { value } => Ok(Object::Integer(*value)),
+        Expression::StringLiteral { value } => Ok(Object::Str(value.clone())),
         Expression::Boolean { value } => Ok(Object::Bool(*value)),
         Expression::IdentifierExpression { identifier } => Ok(Environment::get_rr(env, identifier)),
         Expression::InfixExpression {

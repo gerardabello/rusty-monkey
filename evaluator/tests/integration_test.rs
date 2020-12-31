@@ -16,6 +16,12 @@ fn test_sum() {
 }
 
 #[test]
+fn test_string_concat() {
+    let program = "\"hello\" + \" \" + \"world\"";
+    assert_eq!(run(program), Ok(Object::Str(String::from("hello world"))));
+}
+
+#[test]
 fn test_sum_bool() {
     let program = "true + 1";
     assert_eq!(
@@ -66,8 +72,8 @@ fn test_if_else_expression_true() {
 
 #[test]
 fn test_if_else_expression_false() {
-    let program = "if (false) { 3 } else { 5 }";
-    assert_eq!(run(program), Ok(Object::Integer(5)));
+    let program = "if (false) { 3 } else { \"cool\" }";
+    assert_eq!(run(program), Ok(Object::Str(String::from("cool"))));
 }
 
 #[test]

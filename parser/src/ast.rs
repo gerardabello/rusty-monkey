@@ -37,6 +37,9 @@ pub enum Expression {
     IntegerLiteral {
         value: i64,
     },
+    StringLiteral {
+        value: String,
+    },
     IdentifierExpression {
         identifier: String,
     },

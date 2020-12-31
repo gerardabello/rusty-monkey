@@ -13,11 +13,11 @@ fn parse_errors(s: &str) -> bool {
 
 #[test]
 fn test_let_statement() {
-    let program = "let answer = 42;";
+    let program = "let answer = \"hola\";";
 
     let expected_ast = vec![ast::Statement::LetStatement {
         identifier: String::from("answer"),
-        expression: ast::Expression::IntegerLiteral { value: 42 },
+        expression: ast::Expression::StringLiteral { value: String::from("hola") },
     }];
 
     assert_eq!(parse(program), expected_ast);

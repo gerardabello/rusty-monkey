@@ -126,7 +126,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
 
     fn parse_integer_literal_expression(
         &mut self,
-        value: &str,
+        value: String,
     ) -> Result<ast::Expression, ParseError> {
         match value.parse::<i64>() {
             Ok(i) => Ok(ast::Expression::IntegerLiteral { value: i }),
@@ -134,6 +134,13 @@ impl<T: Iterator<Item = char>> Parser<T> {
                 string: String::from(value),
             }),
         }
+    }
+
+    fn parse_string_literal_expression(
+        &mut self,
+        value: String,
+    ) -> Result<ast::Expression, ParseError> {
+        Ok(ast::Expression::StringLiteral{value})
     }
 
     pub fn parse_statement_list(&mut self) -> Result<Vec<ast::Statement>, ParseError> {
@@ -287,7 +294,8 @@ impl<T: Iterator<Item = char>> Parser<T> {
     fn parse_prefix(&mut self) -> Result<ast::Expression, ParseError> {
         if let Some(token) = self.next_token() {
             return match token {
-                Token::Integer { string } => self.parse_integer_literal_expression(&string),
+                Token::Integer { string } => self.parse_integer_literal_expression(string),
+                Token::StringLiteral { string } => self.parse_string_literal_expression(string),
                 Token::Identifier { name } => {
                     Ok(ast::Expression::IdentifierExpression { identifier: name })
                 }

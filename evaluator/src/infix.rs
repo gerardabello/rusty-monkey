@@ -10,6 +10,7 @@ type InfixFn = fn(&Object, &Object) -> Option<Object>;
 fn sum(a: &Object, b: &Object) -> Option<Object> {
     match (a, b) {
         (Object::Integer(a), Object::Integer(b)) => Some(Object::Integer(a + b)),
+        (Object::Str(a), Object::Str(b)) => Some(Object::Str(a.to_owned() + b)),
         _ => None,
     }
 }
