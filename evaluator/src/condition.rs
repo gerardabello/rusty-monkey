@@ -1,9 +1,12 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use parser::ast::{Expression, Statement};
 
 use super::{eval_expression, eval_statements, object::Object, EvaluationError, env::Environment};
 
 pub fn eval(
-    env: &mut Environment,
+    env: &Rc<RefCell<Environment>>,
     condition: &Expression,
     consequence: &[Statement],
     alternative: &Option<Vec<Statement>>,

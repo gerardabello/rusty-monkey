@@ -1,8 +1,14 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use parser::ast::{Expression, PrefixOperation};
 
 use super::{env::Environment, eval_expression, object::Object, EvaluationError};
 
-fn eval_negative(env: &mut Environment, right: &Expression) -> Result<Object, EvaluationError> {
+fn eval_negative(
+    env: &Rc<RefCell<Environment>>,
+    right: &Expression,
+) -> Result<Object, EvaluationError> {
     let v = eval_expression(env, right)?;
 
     match v {
@@ -14,7 +20,10 @@ fn eval_negative(env: &mut Environment, right: &Expression) -> Result<Object, Ev
     }
 }
 
-fn eval_negate(env: &mut Environment, right: &Expression) -> Result<Object, EvaluationError> {
+fn eval_negate(
+    env: &Rc<RefCell<Environment>>,
+    right: &Expression,
+) -> Result<Object, EvaluationError> {
     let v = eval_expression(env, right)?;
 
     match v {
@@ -27,7 +36,7 @@ fn eval_negate(env: &mut Environment, right: &Expression) -> Result<Object, Eval
 }
 
 pub fn eval(
-    env: &mut Environment,
+    env: &Rc<RefCell<Environment>>,
     operation: &PrefixOperation,
     right: &Expression,
 ) -> Result<Object, EvaluationError> {

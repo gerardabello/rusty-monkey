@@ -2,8 +2,12 @@ pub mod object;
 
 mod condition;
 mod env;
+mod function;
 mod infix;
 mod prefix;
+
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use env::Environment;
 use object::Object;
@@ -29,44 +33,14 @@ pub enum EvaluationError {
     },
 }
 
-fn eval_call_expression(
-    env: &mut Environment,
-    function: &Expression,
-    arguments: &[Expression],
-) -> Result<Object, EvaluationError> {
-    let function_value = eval_expression(env, function)?;
-
-    let (arg_names, body) = match function_value {
-        Object::Function(arguments, body) => (arguments, body),
-        _ => {
-            return Err(EvaluationError::NotCallable {
-                value: function_value.clone(),
-            })
-        }
-    };
-
-    let arg_values = arguments
-        .iter()
-        .flat_map(|a| eval_expression(env, a))
-        .collect::<Vec<_>>();
-
-    let mut new_env = Environment::new();
-
-    for (k, v) in arg_names.iter().zip(arg_values) {
-        new_env.set(k.to_owned(), v);
-    }
-
-    eval_statements(&mut new_env, &body)
-}
-
 fn eval_expression(
-    env: &mut Environment,
+    env: &Rc<RefCell<Environment>>,
     expression: &Expression,
 ) -> Result<Object, EvaluationError> {
     match expression {
         Expression::IntegerLiteral { value } => Ok(Object::Integer(*value)),
         Expression::Boolean { value } => Ok(Object::Bool(*value)),
-        Expression::IdentifierExpression { identifier } => Ok(env.get(identifier)),
+        Expression::IdentifierExpression { identifier } => Ok(Environment::get_rr(env, identifier)),
         Expression::InfixExpression {
             operation,
             right,
@@ -79,17 +53,17 @@ fn eval_expression(
         } => condition::eval(env, condition, consequence, alternative),
         Expression::PrefixExpression { operation, right } => prefix::eval(env, operation, right),
         Expression::FunctionExpression { arguments, body } => {
-            Ok(Object::Function(arguments.to_owned(), body.to_owned()))
+            function::eval_function(env, arguments, body)
         }
         Expression::CallExpression {
             arguments,
             function,
-        } => eval_call_expression(env, function, arguments),
+        } => function::eval_call(env, function, arguments),
     }
 }
 
 fn eval_statement(
-    env: &mut Environment,
+    env: &Rc<RefCell<Environment>>,
     statement: &Statement,
 ) -> Result<Option<Object>, EvaluationError> {
     match statement {
@@ -102,7 +76,7 @@ fn eval_statement(
             expression,
         } => {
             let val = eval_expression(env, expression)?;
-            env.set(identifier.clone(), val);
+            Environment::set_rr(env, identifier.clone(), val);
             Ok(None)
         }
         _ => panic!("Not implemented"),
@@ -110,7 +84,7 @@ fn eval_statement(
 }
 
 fn eval_statements(
-    env: &mut Environment,
+    env: &Rc<RefCell<Environment>>,
     statements: &[Statement],
 ) -> Result<Object, EvaluationError> {
     for statement in statements {
@@ -125,6 +99,6 @@ fn eval_statements(
 }
 
 pub fn eval_program(program: &[Statement]) -> Result<Object, EvaluationError> {
-    let mut env = Environment::new();
-    eval_statements(&mut env, program)
+    let env = Rc::new(RefCell::new(Environment::new()));
+    eval_statements(&env, program)
 }

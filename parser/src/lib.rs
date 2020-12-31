@@ -208,13 +208,10 @@ impl<T: Iterator<Item = char>> Parser<T> {
     fn parse_function_expression(&mut self) -> Result<ast::Expression, ParseError> {
         let arguments_expressions = self.parse_expression_list()?;
 
-        if !arguments_expressions.iter().all(|ex| {
-            if let ast::Expression::IdentifierExpression { identifier } = ex {
-                return true;
-            }
-
-            false
-        }) {
+        if !arguments_expressions
+            .iter()
+            .all(|ex| matches!(ex, ast::Expression::IdentifierExpression { .. }))
+        {
             return Err(ParseError::NonIdentifierExpression);
         }
 

@@ -147,7 +147,6 @@ fn test_call_integer() {
     );
 }
 
-/*
 #[test]
 fn test_function_2() {
     let program = "
@@ -161,4 +160,94 @@ fn test_function_2() {
         ";
     assert_eq!(run(program), Ok(Object::Integer(22)));
 }
-*/
+
+#[test]
+fn test_recursion() {
+    let program = "
+    let factorial = fn (n) {
+      if (n == 0) {
+        1
+      } else{
+        n * factorial(n-1)
+      }
+    };
+
+    factorial(8)
+        ";
+    assert_eq!(run(program), Ok(Object::Integer(40_320)));
+}
+
+#[test]
+fn test_hof() {
+    let program = "
+    let twoTimes = fn (f, n) {
+        f(f(n))
+    };
+
+    let double = fn(n) { 2 * n };
+
+    twoTimes(double, 4)
+        ";
+    assert_eq!(run(program), Ok(Object::Integer(16)));
+}
+
+
+#[test]
+fn test_partial_application() {
+    let program = "
+    let twoTimes = fn (f) {
+        fn (n) {
+          f(f(n))
+        }
+    };
+
+    let double = fn(n) { 2 * n };
+
+    let byFour = twoTimes(double);
+
+    byFour(3)
+        ";
+    assert_eq!(run(program), Ok(Object::Integer(12)));
+}
+
+#[test]
+fn test_scope_1() {
+    let program = "
+    let c = 3;
+    let returnC = fn () {
+      c
+    };
+
+    returnC()
+        ";
+    assert_eq!(run(program), Ok(Object::Integer(3)));
+}
+
+#[test]
+fn test_scope_2() {
+    let program = "
+    let returnC = fn () {
+      c
+    };
+
+    let c = 3;
+
+    returnC()
+        ";
+    assert_eq!(run(program), Ok(Object::Integer(3)));
+}
+
+#[test]
+fn test_scope_3() {
+    let program = "
+    let returnC = fn () {
+      c
+    };
+
+    fn () {
+        let c = 3;
+        returnC()
+    }()
+        ";
+    assert_eq!(run(program), Ok(Object::Null));
+}
