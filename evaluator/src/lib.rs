@@ -78,8 +78,11 @@ fn eval_statement(
             let val = eval_expression(env, expression)?;
             Environment::set_rr(env, identifier.clone(), val);
             Ok(None)
+        },
+        Statement::ExpressionStatement {expression}=> {
+            eval_expression(env, expression)?;
+            Ok(None)
         }
-        _ => panic!("Not implemented"),
     }
 }
 

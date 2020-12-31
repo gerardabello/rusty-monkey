@@ -43,19 +43,59 @@ fn equal(a: &Object, b: &Object) -> Option<Object> {
     }
 }
 
+fn not_equal(a: &Object, b: &Object) -> Option<Object> {
+    match (a, b) {
+        (Object::Integer(a), Object::Integer(b)) => Some(Object::Bool(a != b)),
+        (Object::Bool(a), Object::Bool(b)) => Some(Object::Bool(a != b)),
+        _ => None,
+    }
+}
+
+fn less_than(a: &Object, b: &Object) -> Option<Object> {
+    match (a, b) {
+        (Object::Integer(a), Object::Integer(b)) => Some(Object::Bool(a < b)),
+        _ => None,
+    }
+}
+
+fn greater_than(a: &Object, b: &Object) -> Option<Object> {
+    match (a, b) {
+        (Object::Integer(a), Object::Integer(b)) => Some(Object::Bool(a > b)),
+        _ => None,
+    }
+}
+
+fn less_than_equal(a: &Object, b: &Object) -> Option<Object> {
+    match (a, b) {
+        (Object::Integer(a), Object::Integer(b)) => Some(Object::Bool(a <= b)),
+        _ => None,
+    }
+}
+
+fn greater_than_equal(a: &Object, b: &Object) -> Option<Object> {
+    match (a, b) {
+        (Object::Integer(a), Object::Integer(b)) => Some(Object::Bool(a >= b)),
+        _ => None,
+    }
+}
+
 pub fn eval(
     env: &Rc<RefCell<Environment>>,
     operation: &InfixOperation,
     left: &Expression,
     right: &Expression,
 ) -> Result<Object, EvaluationError> {
-    let func : InfixFn = match operation {
+    let func: InfixFn = match operation {
         InfixOperation::Sum => sum,
         InfixOperation::Subtraction => subtraction,
         InfixOperation::Division => division,
         InfixOperation::Product => product,
         InfixOperation::Equal => equal,
-        _ => panic!("Not implemented"),
+        InfixOperation::LessThan => less_than,
+        InfixOperation::GreaterThan => greater_than,
+        InfixOperation::LessThanEqual => less_than_equal,
+        InfixOperation::GreaterThanEqual => greater_than_equal,
+        InfixOperation::NotEqual => not_equal,
     };
 
     let left_v = eval_expression(env, left)?;

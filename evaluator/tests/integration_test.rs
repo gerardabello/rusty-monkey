@@ -95,6 +95,78 @@ fn test_negate() {
 }
 
 #[test]
+fn test_less_than_true() {
+    let program = "1 < 2";
+    assert_eq!(run(program), Ok(Object::Bool(true)));
+}
+
+#[test]
+fn test_less_than_equal() {
+    let program = "1 < 1";
+    assert_eq!(run(program), Ok(Object::Bool(false)));
+}
+
+#[test]
+fn test_less_than_false() {
+    let program = "6 < 1";
+    assert_eq!(run(program), Ok(Object::Bool(false)));
+}
+
+#[test]
+fn test_greater_than_true() {
+    let program = "66 > 65";
+    assert_eq!(run(program), Ok(Object::Bool(true)));
+}
+
+#[test]
+fn test_greater_than_equal() {
+    let program = "7 > 7";
+    assert_eq!(run(program), Ok(Object::Bool(false)));
+}
+
+#[test]
+fn test_greater_than_false() {
+    let program = "1002 > 2221";
+    assert_eq!(run(program), Ok(Object::Bool(false)));
+}
+
+#[test]
+fn test_less_than_equal_true() {
+    let program = "1 <= 2";
+    assert_eq!(run(program), Ok(Object::Bool(true)));
+}
+
+#[test]
+fn test_less_than_equal_equal() {
+    let program = "1 <= 1";
+    assert_eq!(run(program), Ok(Object::Bool(true)));
+}
+
+#[test]
+fn test_less_than_equal_false() {
+    let program = "6 <= 1";
+    assert_eq!(run(program), Ok(Object::Bool(false)));
+}
+
+#[test]
+fn test_greater_than_equal_true() {
+    let program = "66 >= 65";
+    assert_eq!(run(program), Ok(Object::Bool(true)));
+}
+
+#[test]
+fn test_greater_than_equal_equal() {
+    let program = "7 >= 7";
+    assert_eq!(run(program), Ok(Object::Bool(true)));
+}
+
+#[test]
+fn test_greater_than_equal_false() {
+    let program = "1002 >= 2221";
+    assert_eq!(run(program), Ok(Object::Bool(false)));
+}
+
+#[test]
 fn test_multiple_return() {
     let program = "return 10; return 6;";
     assert_eq!(run(program), Ok(Object::Integer(10)));
@@ -191,7 +263,6 @@ fn test_hof() {
     assert_eq!(run(program), Ok(Object::Integer(16)));
 }
 
-
 #[test]
 fn test_partial_application() {
     let program = "
@@ -250,4 +321,21 @@ fn test_scope_3() {
     }()
         ";
     assert_eq!(run(program), Ok(Object::Null));
+}
+
+#[test]
+fn test_recursion_100() {
+    let program = "
+    let counter = fn (x) {
+      if (x>100) {
+        return true;
+      } else {
+        let foobar = 9999;
+        counter(x+1)
+      }
+    };
+
+    counter(0)
+        ";
+    assert_eq!(run(program), Ok(Object::Bool(true)));
 }
