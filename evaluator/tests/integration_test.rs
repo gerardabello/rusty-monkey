@@ -53,6 +53,30 @@ fn test_division() {
 }
 
 #[test]
+fn test_long_operation() {
+    let program = "6 / 2 + 2 * 2 - 2";
+    assert_eq!(run(program), Ok(Object::Integer(5)));
+}
+
+#[test]
+fn test_len_builtin() {
+    let program = "len(\"pomes\")";
+    assert_eq!(run(program), Ok(Object::Integer(5)));
+}
+
+#[test]
+fn test_builtin_inside_function() {
+    let program = "
+    let lenTimesTwo = fn (s) {
+      2 * len(s)
+    };
+
+    lenTimesTwo(\"mandarina\")
+        ";
+    assert_eq!(run(program), Ok(Object::Integer(18)));
+}
+
+#[test]
 fn test_if_expression_true() {
     let program = "if (true) { 3 }";
     assert_eq!(run(program), Ok(Object::Integer(3)));

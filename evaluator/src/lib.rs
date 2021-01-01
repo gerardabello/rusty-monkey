@@ -5,6 +5,7 @@ mod env;
 mod function;
 mod infix;
 mod prefix;
+mod builtin;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -24,6 +25,10 @@ pub enum EvaluationError {
         operation: PrefixOperation,
         right: Object,
     },
+    InvalidArguments {
+        values: Vec<Object>,
+        expected: &'static str,
+    },
     UnexpectedType {
         value: Object,
         expected: &'static str,
@@ -41,15 +46,7 @@ fn eval_expression(
         Expression::IntegerLiteral { value } => Ok(Object::Integer(*value)),
         Expression::StringLiteral { value } => Ok(Object::Str(value.clone())),
         Expression::Boolean { value } => Ok(Object::Bool(*value)),
-        Expression::IdentifierExpression { identifier } => {
-            match Environment::get_rr(env, identifier) {
-                Object::Null => match identifier.as_ref() {
-                    "print" | "time" => Ok(Object::BuiltInFunction(identifier.clone())),
-                    _ => Ok(Object::Null),
-                },
-                o => Ok(o),
-            }
-        }
+        Expression::IdentifierExpression { identifier } => Ok(Environment::get_rr(env, identifier)),
         Expression::InfixExpression {
             operation,
             right,
@@ -112,5 +109,6 @@ fn eval_statements(
 
 pub fn eval_program(program: &[Statement]) -> Result<Object, EvaluationError> {
     let env = Rc::new(RefCell::new(Environment::new()));
+    builtin::set_builtins_to_env(&env);
     eval_statements(&env, program)
 }

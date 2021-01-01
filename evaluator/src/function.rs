@@ -1,10 +1,12 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use parser::ast::{Expression, Statement};
 
-use super::{env::Environment, eval_expression, eval_statements, object::Object, EvaluationError};
+use super::{
+    builtin::eval_builtin_call, env::Environment, eval_expression, eval_statements, object::Object,
+    EvaluationError,
+};
 
 pub fn eval_call(
     env: &Rc<RefCell<Environment>>,
@@ -26,17 +28,6 @@ pub fn eval_call(
         _ => Err(EvaluationError::NotCallable {
             value: function_value.clone(),
         }),
-    }
-}
-
-fn eval_builtin_call(arg_values: Vec<Object>, name: String) -> Result<Object, EvaluationError> {
-    match name.as_ref() {
-        "print" => {
-            println!("{:?}", arg_values);
-            Ok(Object::Null)
-        },
-        "time" => Ok(Object::Integer(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64)),
-        n => panic!("Unknown builtin function {}", n),
     }
 }
 
