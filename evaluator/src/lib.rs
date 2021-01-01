@@ -1,11 +1,12 @@
 pub mod object;
 
+mod array;
+mod builtin;
 mod condition;
 mod env;
 mod function;
 mod infix;
 mod prefix;
-mod builtin;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -33,8 +34,16 @@ pub enum EvaluationError {
         value: Object,
         expected: &'static str,
     },
+    IndexOutOfBounds {
+        value: Object,
+        index: usize,
+    },
     NotCallable {
         value: Object,
+    },
+    NotIndexable{
+        value: Object,
+        index: Object,
     },
 }
 
@@ -45,6 +54,8 @@ fn eval_expression(
     match expression {
         Expression::IntegerLiteral { value } => Ok(Object::Integer(*value)),
         Expression::StringLiteral { value } => Ok(Object::Str(value.clone())),
+        Expression::Array { array } => array::eval_array(env, array),
+        Expression::ArrayIndex { array, index } => array::eval_indexing(env, array, index),
         Expression::Boolean { value } => Ok(Object::Bool(*value)),
         Expression::IdentifierExpression { identifier } => Ok(Environment::get_rr(env, identifier)),
         Expression::InfixExpression {

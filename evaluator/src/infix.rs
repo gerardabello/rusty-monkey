@@ -11,6 +11,11 @@ fn sum(a: &Object, b: &Object) -> Option<Object> {
     match (a, b) {
         (Object::Integer(a), Object::Integer(b)) => Some(Object::Integer(a + b)),
         (Object::Str(a), Object::Str(b)) => Some(Object::Str(a.to_owned() + b)),
+        (Object::Array(a), Object::Array(b)) => {
+            let mut v = a.to_owned();
+            v.extend_from_slice(b);
+            Some(Object::Array(v))
+        },
         _ => None,
     }
 }

@@ -12,6 +12,7 @@ fn test_single_char_tokens() {
         ;
         =
         {}()
+        []
         >
         <
         ";
@@ -27,6 +28,8 @@ fn test_single_char_tokens() {
         Token::CloseBrace,
         Token::OpenParenthesis,
         Token::CloseParenthesis,
+        Token::OpenSquare,
+        Token::CloseSquare,
         Token::GreaterThan,
         Token::LessThan,
     ];

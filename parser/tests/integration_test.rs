@@ -17,7 +17,9 @@ fn test_let_statement() {
 
     let expected_ast = vec![ast::Statement::LetStatement {
         identifier: String::from("answer"),
-        expression: ast::Expression::StringLiteral { value: String::from("hola") },
+        expression: ast::Expression::StringLiteral {
+            value: String::from("hola"),
+        },
     }];
 
     assert_eq!(parse(program), expected_ast);
@@ -759,6 +761,41 @@ fn test_call_precedence() {
                     identifier: String::from("c"),
                 }),
             }),
+        },
+    }];
+
+    assert_eq!(parse(program), expected_ast);
+}
+
+#[test]
+fn test_array() {
+    let program = "[\"hola\", 5,true]";
+
+    let expected_ast = vec![ast::Statement::ReturnStatement {
+        expression: ast::Expression::Array {
+            array: vec![
+                ast::Expression::StringLiteral {
+                    value: String::from("hola"),
+                },
+                ast::Expression::IntegerLiteral { value: 5 },
+                ast::Expression::Boolean { value: true },
+            ],
+        },
+    }];
+
+    assert_eq!(parse(program), expected_ast);
+}
+
+#[test]
+fn test_array_index() {
+    let program = "a[0];";
+
+    let expected_ast = vec![ast::Statement::ExpressionStatement {
+        expression: ast::Expression::ArrayIndex {
+            array: Box::new(ast::Expression::IdentifierExpression {
+                identifier: String::from("a"),
+            }),
+            index: Box::new(ast::Expression::IntegerLiteral { value: 0 }),
         },
     }];
 

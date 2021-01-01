@@ -140,7 +140,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
         &mut self,
         value: String,
     ) -> Result<ast::Expression, ParseError> {
-        Ok(ast::Expression::StringLiteral{value})
+        Ok(ast::Expression::StringLiteral { value })
     }
 
     pub fn parse_statement_list(&mut self) -> Result<Vec<ast::Statement>, ParseError> {
@@ -174,6 +174,42 @@ impl<T: Iterator<Item = char>> Parser<T> {
         }
 
         Ok(block)
+    }
+
+    fn parse_array(&mut self) -> Result<ast::Expression, ParseError> {
+        let mut list: Vec<ast::Expression> = Vec::new();
+        self.skip_token_expecting(Token::OpenSquare)?;
+
+        if let Some(Token::CloseSquare) = self.peek_next_token() {
+            self.skip_token().expect("We just peeked");
+            return Ok(ast::Expression::Array { array: list });
+        };
+
+        loop {
+            let expression = self.parse_expression(Precedence::Lowest)?;
+
+            list.push(expression);
+
+            match self.peek_next_token() {
+                Some(Token::Comma) => {
+                    self.skip_token().expect("We just peeked");
+                    continue;
+                }
+                Some(Token::CloseSquare) => {
+                    self.skip_token().expect("We just peeked");
+                    break;
+                }
+                Some(t) => {
+                    return Err(ParseError::UnexpectedToken {
+                        token: t.clone(),
+                        expecting: String::from("comma, close parenthesis"),
+                    })
+                }
+                None => return Err(ParseError::UnexpectedEnd),
+            };
+        }
+
+        Ok(ast::Expression::Array { array: list })
     }
 
     fn parse_expression_list(&mut self) -> Result<Vec<ast::Expression>, ParseError> {
@@ -304,6 +340,10 @@ impl<T: Iterator<Item = char>> Parser<T> {
                 Token::Bang => self.parse_prefix_expression(ast::PrefixOperation::Negate),
                 Token::Minus => self.parse_prefix_expression(ast::PrefixOperation::Negative),
                 Token::OpenParenthesis => self.parse_grouped_expression(),
+                Token::OpenSquare => {
+                    self.save_token(token);
+                    self.parse_array()
+                }
                 Token::If => self.parse_if_expression(),
                 Token::Function => self.parse_function_expression(),
                 t => Err(ParseError::UnexpectedToken {
@@ -314,6 +354,19 @@ impl<T: Iterator<Item = char>> Parser<T> {
         }
 
         Err(ParseError::UnexpectedEnd)
+    }
+
+    fn parse_index_expression(
+        &mut self,
+        array: ast::Expression,
+    ) -> Result<ast::Expression, ParseError> {
+        self.skip_token_expecting(Token::OpenSquare)?;
+        let index = self.parse_expression(Precedence::Lowest)?;
+        self.skip_token_expecting(Token::CloseSquare)?;
+        Ok(ast::Expression::ArrayIndex {
+            array: Box::new(array),
+            index: Box::new(index),
+        })
     }
 
     fn parse_call_expression(
@@ -363,6 +416,10 @@ impl<T: Iterator<Item = char>> Parser<T> {
                 Token::OpenParenthesis => {
                     self.save_token(token);
                     return Some(self.parse_call_expression(left));
+                }
+                Token::OpenSquare => {
+                    self.save_token(token);
+                    return Some(self.parse_index_expression(left));
                 }
                 t => {
                     self.save_token(t);

@@ -35,6 +35,8 @@ pub enum Token {
     CloseParenthesis,
     OpenBrace,
     CloseBrace,
+    OpenSquare,
+    CloseSquare,
 
     Comma,
     Semicolon,
@@ -220,6 +222,8 @@ impl<T: Iterator<Item = char>> Lexer<T> {
                 ')' => Some(Token::CloseParenthesis),
                 '{' => Some(Token::OpenBrace),
                 '}' => Some(Token::CloseBrace),
+                '[' => Some(Token::OpenSquare),
+                ']' => Some(Token::CloseSquare),
                 ',' => Some(Token::Comma),
                 '!' => self.next_token_starting_with_bang(),
                 '=' => self.next_token_starting_with_equal(),

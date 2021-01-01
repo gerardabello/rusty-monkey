@@ -40,6 +40,9 @@ pub enum Expression {
     StringLiteral {
         value: String,
     },
+    Array {
+        array: Vec<Expression>,
+    },
     IdentifierExpression {
         identifier: String,
     },
@@ -62,8 +65,12 @@ pub enum Expression {
         body: Vec<Statement>,
     },
     CallExpression {
-        function: Box<Expression>, // Can only be identifier or function
+        function: Box<Expression>,
         arguments: Vec<Expression>,
+    },
+    ArrayIndex {
+        array: Box<Expression>,
+        index: Box<Expression>,
     },
     Boolean {
         value: bool,

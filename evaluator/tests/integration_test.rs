@@ -22,6 +22,55 @@ fn test_string_concat() {
 }
 
 #[test]
+fn test_array_concat() {
+    let program = "[1,2] + [2,false]";
+    assert_eq!(
+        run(program),
+        Ok(Object::Array(vec![
+            Object::Integer(1),
+            Object::Integer(2),
+            Object::Integer(2),
+            Object::Bool(false),
+        ]))
+    );
+}
+
+#[test]
+fn test_array_len() {
+    let program = "
+        let a =[\"hola\", 5,true, 2, 2, 7];
+        len(a) + 3
+    ";
+
+    assert_eq!(run(program), Ok(Object::Integer(9)));
+}
+
+
+#[test]
+fn test_array_index() {
+    let program = "
+        let a = [2,7,\"hola\"];
+        a[2]
+    ";
+    assert_eq!(run(program), Ok(Object::Str(String::from("hola")),));
+}
+
+#[test]
+fn test_array_index_out() {
+    let program = "
+        let a = [1,2];
+        a[2]
+    ";
+    assert_eq!(
+        run(program),
+        Err(EvaluationError::IndexOutOfBounds {
+            value: Object::Array(vec![Object::Integer(1), Object::Integer(2)]),
+            index: 2,
+        })
+    );
+}
+
+#[test]
 fn test_sum_bool() {
     let program = "true + 1";
     assert_eq!(
