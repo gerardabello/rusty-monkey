@@ -49,3 +49,34 @@ impl std::fmt::Debug for Object {
         }
     }
 }
+
+fn display_array<T: std::fmt::Display>(
+    array: &[T],
+    f: &mut std::fmt::Formatter<'_>,
+) -> std::fmt::Result {
+    write!(f, "[")?;
+    for (index, item) in array.iter().enumerate() {
+        write!(f, "{}", item)?;
+        if index < array.len() - 1 {
+            write!(f, ", ")?;
+        }
+    }
+    write!(f, "]")
+}
+
+impl std::fmt::Display for Object {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Object::Null => write!(f, "NULL"),
+            Object::Integer(v) => write!(f, "{}", v),
+            Object::Bool(v) => write!(f, "{}", v),
+            Object::Str(v) => write!(f, "{}", v),
+            Object::Array(v) => display_array(v, f),
+            Object::Function(args, _, _) => {
+                write!(f, "]")?;
+                display_array(args, f)
+            }
+            Object::BuiltInFunction(name) => write!(f,"builtin({})", name),
+        }
+    }
+}

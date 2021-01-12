@@ -113,6 +113,74 @@ fn test_len_builtin() {
 }
 
 #[test]
+fn test_len_builtin_array() {
+    let program = "len([1,0,2, 2])";
+    assert_eq!(run(program), Ok(Object::Integer(4)));
+}
+
+#[test]
+fn test_first_builtin() {
+    let program = "first([6,0,2, 77])";
+    assert_eq!(run(program), Ok(Object::Integer(6)));
+}
+
+#[test]
+fn test_last_builtin() {
+    let program = "last([6,0,2, 77])";
+    assert_eq!(run(program), Ok(Object::Integer(77)));
+}
+
+#[test]
+fn test_rest_builtin() {
+    let program = "rest([2,2,2, \"2\"])";
+    assert_eq!(
+        run(program),
+        Ok(Object::Array(vec![
+            Object::Integer(2),
+            Object::Integer(2),
+            Object::Str("2".to_string()),
+        ]))
+    );
+}
+
+#[test]
+fn test_push_builtin() {
+    let program = "
+        let a = [2,6,9];
+        let b = push(a, 5);
+        b
+    ";
+
+    assert_eq!(
+        run(program),
+        Ok(Object::Array(vec![
+            Object::Integer(2),
+            Object::Integer(6),
+            Object::Integer(9),
+            Object::Integer(5),
+        ]))
+    );
+}
+
+#[test]
+fn test_push_builtin_immutable() {
+    let program = "
+        let a = [2,6,9];
+        let b = push(a, 5);
+        a
+    ";
+
+    assert_eq!(
+        run(program),
+        Ok(Object::Array(vec![
+            Object::Integer(2),
+            Object::Integer(6),
+            Object::Integer(9),
+        ]))
+    );
+}
+
+#[test]
 fn test_builtin_inside_function() {
     let program = "
     let lenTimesTwo = fn (s) {
