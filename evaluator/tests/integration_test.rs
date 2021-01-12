@@ -45,7 +45,6 @@ fn test_array_len() {
     assert_eq!(run(program), Ok(Object::Integer(9)));
 }
 
-
 #[test]
 fn test_array_index() {
     let program = "

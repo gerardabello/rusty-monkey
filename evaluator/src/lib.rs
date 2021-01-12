@@ -11,7 +11,8 @@ mod prefix;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use env::Environment;
+pub use env::Environment;
+pub use builtin::set_builtins_to_env;
 use object::Object;
 use parser::ast::{Expression, InfixOperation, PrefixOperation, Statement};
 
@@ -103,7 +104,7 @@ fn eval_statement(
     }
 }
 
-fn eval_statements(
+pub fn eval_statements(
     env: &Rc<RefCell<Environment>>,
     statements: &[Statement],
 ) -> Result<Object, EvaluationError> {
@@ -118,8 +119,13 @@ fn eval_statements(
     Ok(Object::Null)
 }
 
-pub fn eval_program(program: &[Statement]) -> Result<Object, EvaluationError> {
+pub fn new_environment() ->Rc<RefCell<Environment>> {
     let env = Rc::new(RefCell::new(Environment::new()));
-    builtin::set_builtins_to_env(&env);
+    set_builtins_to_env(&env);
+    env
+}
+
+pub fn eval_program(program: &[Statement]) -> Result<Object, EvaluationError> {
+    let env = new_environment();
     eval_statements(&env, program)
 }
