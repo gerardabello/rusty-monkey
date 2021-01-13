@@ -6,15 +6,12 @@ use parser::ast::Expression;
 use super::{env::Environment, eval_expression, object::Object, EvaluationError};
 
 pub fn eval_indexing(
-    env: &Rc<RefCell<Environment>>,
-    array: &Expression,
-    index: &Expression,
+    arr: Vec<Object>,
+    index: Object,
 ) -> Result<Object, EvaluationError> {
-    let array_v = eval_expression(env, array)?;
-    let index_v = eval_expression(env, index)?;
 
-    match (array_v, index_v) {
-        (Object::Array(arr), Object::Integer(i)) => {
+    match index {
+        Object::Integer(i) => {
             if arr.len() <= i as usize {
                 return Err(EvaluationError::IndexOutOfBounds {
                     value: Object::Array(arr),
@@ -23,7 +20,7 @@ pub fn eval_indexing(
             }
             Ok(arr[i as usize].clone())
         }
-        (v, i) => Err(EvaluationError::NotIndexable { value: v, index: i }),
+        i => Err(EvaluationError::NotIndexable { value: Object::Array(arr), index: Some(i) }),
     }
 }
 

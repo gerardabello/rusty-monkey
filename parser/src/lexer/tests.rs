@@ -9,6 +9,7 @@ fn test_single_char_tokens() {
     let code = "
         * / !
         ,
+        :
         ;
         =
         {}()
@@ -22,6 +23,7 @@ fn test_single_char_tokens() {
         Token::Slash,
         Token::Bang,
         Token::Comma,
+        Token::Colon,
         Token::Semicolon,
         Token::Assign,
         Token::OpenBrace,

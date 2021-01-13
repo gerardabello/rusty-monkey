@@ -22,6 +22,48 @@ fn test_string_concat() {
 }
 
 #[test]
+fn test_hashmap() {
+    let program = "{\"a\": 2, 3: 5}";
+    assert_eq!(
+        run(program),
+        Ok(Object::HashMap(
+            [
+                (Object::Str(String::from("a")), Object::Integer(2)),
+                (Object::Integer(3), Object::Integer(5)),
+            ]
+            .iter()
+            .cloned()
+            .collect()
+        ))
+    );
+}
+
+#[test]
+fn test_hashmap_index() {
+    let program = "
+    let h = {\"a\": 2, 3: 5};
+    h[\"a\"] + h[3]
+";
+
+    assert_eq!(run(program), Ok(Object::Integer(7)));
+}
+
+#[test]
+fn test_hashmap_with_fn() {
+    let program = "
+    let h = {\"a\": 2, 6: 
+      fn(a) {
+        a * 3
+      },
+      \"test\": 0
+    };
+    h[6](4)
+";
+
+    assert_eq!(run(program), Ok(Object::Integer(12)));
+}
+
+#[test]
 fn test_array_concat() {
     let program = "[1,2] + [2,false]";
     assert_eq!(

@@ -131,7 +131,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
         match value.parse::<i64>() {
             Ok(i) => Ok(ast::Expression::IntegerLiteral { value: i }),
             Err(_) => Err(ParseError::FailedParsingInteger {
-                string: String::from(value),
+                string: value,
             }),
         }
     }
@@ -176,6 +176,44 @@ impl<T: Iterator<Item = char>> Parser<T> {
         Ok(block)
     }
 
+    fn parse_hashmap(&mut self) -> Result<ast::Expression, ParseError> {
+        let mut pairs: Vec<(ast::Expression, ast::Expression)> = Vec::new();
+        self.skip_token_expecting(Token::OpenBrace)?;
+
+        if let Some(Token::CloseBrace) = self.peek_next_token() {
+            self.skip_token().expect("We just peeked");
+            return Ok(ast::Expression::HashMap { pairs });
+        };
+
+        loop {
+            let key = self.parse_expression(Precedence::Lowest)?;
+        self.skip_token_expecting(Token::Colon)?;
+            let value = self.parse_expression(Precedence::Lowest)?;
+
+            pairs.push((key, value));
+
+            match self.peek_next_token() {
+                Some(Token::Comma) => {
+                    self.skip_token().expect("We just peeked");
+                    continue;
+                }
+                Some(Token::CloseBrace) => {
+                    self.skip_token().expect("We just peeked");
+                    break;
+                }
+                Some(t) => {
+                    return Err(ParseError::UnexpectedToken {
+                        token: t.clone(),
+                        expecting: String::from("comma, close brace"),
+                    })
+                }
+                None => return Err(ParseError::UnexpectedEnd),
+            };
+        }
+
+        Ok(ast::Expression::HashMap { pairs })
+    }
+
     fn parse_array(&mut self) -> Result<ast::Expression, ParseError> {
         let mut list: Vec<ast::Expression> = Vec::new();
         self.skip_token_expecting(Token::OpenSquare)?;
@@ -202,7 +240,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
                 Some(t) => {
                     return Err(ParseError::UnexpectedToken {
                         token: t.clone(),
-                        expecting: String::from("comma, close parenthesis"),
+                        expecting: String::from("comma, close square"),
                     })
                 }
                 None => return Err(ParseError::UnexpectedEnd),
@@ -344,6 +382,10 @@ impl<T: Iterator<Item = char>> Parser<T> {
                     self.save_token(token);
                     self.parse_array()
                 }
+                Token::OpenBrace=> {
+                    self.save_token(token);
+                    self.parse_hashmap()
+                }
                 Token::If => self.parse_if_expression(),
                 Token::Function => self.parse_function_expression(),
                 t => Err(ParseError::UnexpectedToken {
@@ -363,7 +405,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
         self.skip_token_expecting(Token::OpenSquare)?;
         let index = self.parse_expression(Precedence::Lowest)?;
         self.skip_token_expecting(Token::CloseSquare)?;
-        Ok(ast::Expression::ArrayIndex {
+        Ok(ast::Expression::Index {
             array: Box::new(array),
             index: Box::new(index),
         })

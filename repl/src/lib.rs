@@ -1,11 +1,10 @@
-
 use evaluator::{eval_statements, new_environment};
 
 use parser::Parser;
 
 use std::io;
 
-fn main() {
+pub fn run() {
     let env = new_environment();
 
     loop {

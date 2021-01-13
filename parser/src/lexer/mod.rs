@@ -40,6 +40,7 @@ pub enum Token {
 
     Comma,
     Semicolon,
+    Colon,
 }
 
 fn is_whitespace(c: char) -> bool {
@@ -218,6 +219,7 @@ impl<T: Iterator<Item = char>> Lexer<T> {
                 '*' => Some(Token::Asterisk),
                 '/' => Some(Token::Slash),
                 ';' => Some(Token::Semicolon),
+                ':' => Some(Token::Colon),
                 '(' => Some(Token::OpenParenthesis),
                 ')' => Some(Token::CloseParenthesis),
                 '{' => Some(Token::OpenBrace),

@@ -43,6 +43,9 @@ pub enum Expression {
     Array {
         array: Vec<Expression>,
     },
+    HashMap {
+        pairs: Vec<(Expression, Expression)>,
+    },
     IdentifierExpression {
         identifier: String,
     },
@@ -68,7 +71,7 @@ pub enum Expression {
         function: Box<Expression>,
         arguments: Vec<Expression>,
     },
-    ArrayIndex {
+    Index {
         array: Box<Expression>,
         index: Box<Expression>,
     },

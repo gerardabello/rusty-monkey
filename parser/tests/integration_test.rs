@@ -787,15 +787,54 @@ fn test_array() {
 }
 
 #[test]
-fn test_array_index() {
-    let program = "a[0];";
+fn test_index() {
+    let program = "
+    a[0];
+    a[\"b\"];
+    ";
 
-    let expected_ast = vec![ast::Statement::ExpressionStatement {
-        expression: ast::Expression::ArrayIndex {
-            array: Box::new(ast::Expression::IdentifierExpression {
-                identifier: String::from("a"),
-            }),
-            index: Box::new(ast::Expression::IntegerLiteral { value: 0 }),
+    let expected_ast = vec![
+        ast::Statement::ExpressionStatement {
+            expression: ast::Expression::Index {
+                array: Box::new(ast::Expression::IdentifierExpression {
+                    identifier: String::from("a"),
+                }),
+                index: Box::new(ast::Expression::IntegerLiteral { value: 0 }),
+            },
+        },
+        ast::Statement::ExpressionStatement {
+            expression: ast::Expression::Index {
+                array: Box::new(ast::Expression::IdentifierExpression {
+                    identifier: String::from("a"),
+                }),
+                index: Box::new(ast::Expression::StringLiteral {
+                    value: String::from("b"),
+                }),
+            },
+        },
+    ];
+
+    assert_eq!(parse(program), expected_ast);
+}
+
+#[test]
+fn test_hashmap() {
+    let program = "{\"a\": 2, 3: 5}";
+
+    let expected_ast = vec![ast::Statement::ReturnStatement {
+        expression: ast::Expression::HashMap {
+            pairs: vec![
+                (
+                    ast::Expression::StringLiteral {
+                        value: String::from("a"),
+                    },
+                    ast::Expression::IntegerLiteral { value: 2 },
+                ),
+                (
+                    ast::Expression::IntegerLiteral { value: 3 },
+                    ast::Expression::IntegerLiteral { value: 5 },
+                ),
+            ],
         },
     }];
 

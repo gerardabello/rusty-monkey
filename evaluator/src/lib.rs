@@ -1,6 +1,7 @@
 pub mod object;
 
 mod array;
+mod hashmap;
 mod builtin;
 mod condition;
 mod env;
@@ -39,12 +40,15 @@ pub enum EvaluationError {
         value: Object,
         index: usize,
     },
+    NotHashable {
+        value: Object,
+    },
     NotCallable {
         value: Object,
     },
     NotIndexable{
         value: Object,
-        index: Object,
+        index: Option<Object>,
     },
 }
 
@@ -56,7 +60,17 @@ fn eval_expression(
         Expression::IntegerLiteral { value } => Ok(Object::Integer(*value)),
         Expression::StringLiteral { value } => Ok(Object::Str(value.clone())),
         Expression::Array { array } => array::eval_array(env, array),
-        Expression::ArrayIndex { array, index } => array::eval_indexing(env, array, index),
+        Expression::HashMap { pairs } => hashmap::eval_hashmap(env, pairs),
+        Expression::Index { array, index } =>  {
+    let array_v = eval_expression(env, array)?;
+    let index_v = eval_expression(env, index)?;
+
+    match array_v {
+        Object::Array(arr) => array::eval_indexing(arr, index_v),
+        Object::HashMap(hm) => hashmap::eval_indexing(hm, index_v),
+        v => Err(EvaluationError::NotIndexable { value: v, index: None }),
+    }
+        },
         Expression::Boolean { value } => Ok(Object::Bool(*value)),
         Expression::IdentifierExpression { identifier } => Ok(Environment::get_rr(env, identifier)),
         Expression::InfixExpression {
