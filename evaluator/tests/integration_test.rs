@@ -49,6 +49,18 @@ fn test_hashmap_index() {
 }
 
 #[test]
+fn test_hashmap_index_2() {
+    let program = "
+    let people = [{\"name\": \"Anna\", \"age\": 24}, {\"name\": \"Bob\", \"age\": 99}];
+
+    let getName = fn(person) { person[\"name\"] };
+    getName(people[1])
+";
+
+    assert_eq!(run(program), Ok(Object::Str(String::from("Bob"))));
+}
+
+#[test]
 fn test_hashmap_with_fn() {
     let program = "
     let h = {\"a\": 2, 6: 
@@ -526,4 +538,37 @@ fn test_recursion_100() {
     counter(0)
         ";
     assert_eq!(run(program), Ok(Object::Bool(true)));
+}
+
+#[test]
+fn test_clojure() {
+    let program = "
+    let newAdder = fn(a, b) {
+        fn(c) { a + b + c }
+    };
+
+    let adder = newAdder(1, 2);
+
+    adder(8)
+    ";
+    assert_eq!(run(program), Ok(Object::Integer(11)));
+}
+
+#[test]
+fn test_fibonacci() {
+    let program = "
+    let fibonacci = fn(x) {
+      if (x == 0) {
+        return 0;
+      } else {
+        if (x == 1) {
+          return 1;
+        } else {
+          return fibonacci(x - 1) + fibonacci(x - 2);
+        }
+      }
+    };
+    fibonacci(16)
+    ";
+    assert_eq!(run(program), Ok(Object::Integer(987)));
 }
